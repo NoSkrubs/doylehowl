@@ -3,9 +3,8 @@ title: "Doyle Howl"
 author: "ADW1"
 date: "Early 2018"
 output:
-  html_document:
+  md_document:
     toc: true
-    toc_float: true
     toc_depth: 2
 ---
 
