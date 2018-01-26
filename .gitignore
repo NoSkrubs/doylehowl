@@ -1,5 +1,7 @@
 #file folders
-tumblr-utils/
+tumblr-utils/homers-smut.tumblr.com
+tumblr-utils/reed-emissions.tumblr.com
+tumblr-utils/reedrelieves.tumblr.com
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -102,3 +104,4 @@ ENV/
 
 # mypy
 .mypy_cache/
+.Rproj.user
