@@ -10,6 +10,17 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+# libraries
+library(tidyverse)
+
+
+# connect to pg
+con <- dbConnect(RPostgres::Postgres())
+
+# check it there
+dbGetQuery(con, "SELECT COUNT(*) FROM doyle_howl_data;")
+
 ```
 
 An investigation into the murmurs, musings, and mentions from a memory long forgotten. 
@@ -29,6 +40,11 @@ A forlorn exaltation into the cyber-sphere, a weary lover lamenting the invetibl
 > DAT GALLON-GUZZLING TECHNIQUE
 
 The first of thousands confessions to follow, all produced anonymously, all managed by a shadowy few secret keepers who would come and go over the proceeding months. In total three incarnations of the service would be wrought over a course of aproximately 18 months, from winter 2012 through the early autumn 2014. 11,485 posts would be made across the three Tumblr pages, which to this day still rest as a memorial to the emotional milue of a point in time; and for many, a continuing source of Google-able nostalgia, and embarassment.
+
+```{r echo=FALSE}
+
+```
+
 
 With this memorial though, we can over the distance of time look back at those thoughts, those memories, those incarnations, and begin to understand through the lens of data and analysis what themes, trends, and cultural shifts occured over those 18 months. Although what comes to follow is by no means exhaustive, it is a first pass at what may be a rich source of information at a raw point in time in the lives of students at the Reed College, in Portland, OR.
 
@@ -83,24 +99,85 @@ For the sake of privacy, all names have been removed from the quoted posts. Furt
 ***
 # Appendix
 
-### About me
+## About me
 
-### The code
+My name is Andrew. 
+
+## The code
+
+The code blocks below detail how the analysis above was performed
 
 ### Data preperation
 
-Extracted with `tumblr_utils.py`. Cleaned in R.
+Extracted with `tumblr_utils.py`. This script downloaded the background JSONs for each blog post. The R script below extracts the necessary data from the JSONs and combines into a single table. This table is saved onto the local computer for future analysis and extraction.
 
-```{r}
+```{r eval=FALSE}
+# Libraries
+library(tidyverse)
+library(jsonlite)
+library(lubridate)
+library(rvest)
+
+strip_html <- function(s) {
+    html_text(read_html(s))
+}
+
+# list of files
 files <- c(
-    list.files("../tumblr-utils/homers-smut.tumblr.com/json/")
-  , list.files("../tumblr-utils/reed-emissions.tumblr.com/json/")
-  , list.files("../tumblr-utils/reedrelieves.tumblr.com/json/")
+   list.files("../tumblr-utils/homers-smut.tumblr.com/json/"    , full.names = TRUE)
+ , list.files("../tumblr-utils/reed-emissions.tumblr.com/json/" , full.names = TRUE)
+ , list.files("../tumblr-utils/reedrelieves.tumblr.com/json/"   , full.names = TRUE)
 )
 length(files)
+
+# empty file
+data <- tibble()
+
+# extract json and create data frame
+for (file in files) {
+  json <- fromJSON(read_lines(file))
+  
+  question <- ifelse(is.null(json$question), paste0(""), json$question)
+  summary  <- ifelse(is.null(json$summary), paste0("") , json$summary)
+  content  <- ifelse(
+      is.null(json$trail$content_raw)
+    , paste0("")
+    , str_replace_all(strip_html(json$trail$content_raw), "\n", "")
+  )
+
+  jsonTibble <- tibble(
+      id        = as.character(json$id)
+    , blog_name = json$blog_name
+    , date      = with_tz(ymd_hms(json$date), "America/Los_Angeles")
+    , content   = content
+    , question  = question
+    , summary   = summary
+    , short_url = json$short_url
+    , post_type = json$type
+  )
+
+  data <- data %>% bind_rows(jsonTibble)
+}
+
+# Save data to local postgres db
+library(RPostgres)
+library(DBI)
+
+con <- dbConnect(RPostgres::Postgres())
+dbWriteTable(con, "doyle_howl_data", data, overwrite = TRUE)
+
+# check it there
+dbGetQuery(con, "SELECT COUNT(*) FROM doyle_howl_data;")
 ```
 
 ### Basic statistics
+
+
+
+```{r}
+library()
+
+```
 
 
 ###
