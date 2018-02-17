@@ -13,14 +13,42 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # libraries
 library(tidyverse)
-
+library(RPostgres)
+library(DBI)
+library(lubridate)
+library(stringi)
+library(stringr)
+library(ggthemes)
+library(tm)
+library(tidytext)
+library(wordcloud2)
 
 # connect to pg
 con <- dbConnect(RPostgres::Postgres())
 
-# check it there
-dbGetQuery(con, "SELECT COUNT(*) FROM doyle_howl_data;")
+# read in raw data
+raw_data <- dbReadTable(con, "doyle_howl_data")
 
+# some furhter data prep
+data <- raw_data %>%
+  mutate(
+      week = floor_date(date, "week")
+    , day  = floor_date(date, "day")
+    , hour = hour(date) + minute(date) / 60
+    , wday = wday(date) + hour / 24
+    , text = case_when(
+          blog_name == "homers-smut"    ~ paste(question, content)
+        , blog_name == "reed-emissions" ~ paste(content)
+        , blog_name == "reedrelieves"   ~ paste(content)
+    )
+    , page = case_when(
+          blog_name == "homers-smut"    ~ "Reed Releases"
+        , blog_name == "reed-emissions" ~ "Reed Emissions"
+        , blog_name == "reedrelieves"   ~ "Reed Relieves" 
+    )
+    , text = stri_enc_toutf8(text)
+    , text = str_replace_all(text,"’","'")
+  )
 ```
 
 An investigation into the murmurs, musings, and mentions from a memory long forgotten. 
@@ -41,10 +69,22 @@ A forlorn exaltation into the cyber-sphere, a weary lover lamenting the invetibl
 
 The first of thousands confessions to follow, all produced anonymously, all managed by a shadowy few secret keepers who would come and go over the proceeding months. In total three incarnations of the service would be wrought over a course of aproximately 18 months, from winter 2012 through the early autumn 2014. 11,485 posts would be made across the three Tumblr pages, which to this day still rest as a memorial to the emotional milue of a point in time; and for many, a continuing source of Google-able nostalgia, and embarassment.
 
-```{r echo=FALSE}
+```{r echo=FALSE, fig.height=5, fig.width=10}
+title <- "Fig 1: count of posts per week"
 
+  data %>%
+  group_by(week, page) %>%
+  summarize(
+    count = n()
+  ) %>%
+  ggplot(aes(x = week, y = count, fill = page)) +
+    geom_col(alpha = 0.7) +
+    xlab("Week") + 
+    ylab("Number of posts") + 
+    labs(fill = "Page") +
+    ggtitle(title) +
+    theme_few(base_size = 14)
 ```
-
 
 With this memorial though, we can over the distance of time look back at those thoughts, those memories, those incarnations, and begin to understand through the lens of data and analysis what themes, trends, and cultural shifts occured over those 18 months. Although what comes to follow is by no means exhaustive, it is a first pass at what may be a rich source of information at a raw point in time in the lives of students at the Reed College, in Portland, OR.
 
@@ -58,6 +98,19 @@ For the sake of privacy, all names have been removed from the quoted posts. Furt
 
 ## Reed Releases
 
+```{r echo = FALSE}
+data(stop_words)
+all_words <- data %>%
+  filter(page == "Reed Relieves") %>%
+  select(text) %>%
+  unnest_tokens(word, text, to_lower = TRUE) %>%
+  anti_join(stop_words) %>%
+  count(word, sort = TRUE)
+
+wordcloud2(data = all_words)
+```
+
+
 ## Reed Emissions
 
 ## Reed Relieves
@@ -67,6 +120,30 @@ For the sake of privacy, all names have been removed from the quoted posts. Furt
 # The frequentist approach
 
 ## Posting patterns
+
+```{r echo=FALSE, fig.height=5, fig.width=10}
+title <- "Figure 2: density of posts by hour in day"
+
+  data %>%
+  ggplot(aes(x = hour, fill = blog_name)) +
+    geom_density(alpha = 0.5, color = rgb(0,0,0,0)) +
+    labs(fill = "Page") +
+    ggtitle(title) +
+    theme_few(base_size = 14)
+```
+
+
+```{r echo=FALSE, fig.height=5, fig.width=10}
+title <- "Figure 2: density of posts by hour in day"
+
+  data %>%
+  ggplot(aes(x = hour, fill = blog_name)) +
+    geom_density(alpha = 0.5, color = rgb(0,0,0,0)) +
+    labs(fill = "Page") +
+    ggtitle(title) +
+    theme_few(base_size = 14)
+```
+
 
 ## Common words
 
@@ -142,7 +219,7 @@ for (file in files) {
   content  <- ifelse(
       is.null(json$trail$content_raw)
     , paste0("")
-    , str_replace_all(strip_html(json$trail$content_raw), "\n", "")
+    , str_replace_all(strip_html(json$trail$content_raw), "\n", " ")
   )
 
   jsonTibble <- tibble(
