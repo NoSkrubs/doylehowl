@@ -4,10 +4,12 @@ author: "ADW1"
 date: "Early 2018"
 output:
   html_document:
-    toc: true
-    toc_depth: 2
-    toc_float: true
     fig_caption: yes
+    highlight: monochrome
+    keep_md: yes
+    toc: yes
+    toc_depth: 2
+    toc_float: yes
 ---
 
 ```{r setup, include=FALSE}
