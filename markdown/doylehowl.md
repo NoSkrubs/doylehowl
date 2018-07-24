@@ -11,94 +11,7 @@ output:
     toc_float: yes
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
-knitr::opts_chunk$set(warning = FALSE)
-knitr::opts_chunk$set(message = FALSE)
-knitr::opts_chunk$set(error = FALSE)
 
-## LIBRARIES
-# Core data manipulation libraries
-library(tidyverse) 
-library(lubridate) # dates
-library(stringi)   # text
-library(stringr)   # text
-library(scales)    # number formating
-
-# Database libraries
-library(RPostgres)
-library(DBI)
-
-# Text analysis libraries
-library(tm)
-library(tidytext)
-library(SnowballC)
-library(lexicon)  
-
-# Data visualization libraries
-library(ggthemes)
-library(wordcloud)
-library(kableExtra)
-library(knitr)
-library(RColorBrewer)
-
-# connect to pg
-con <- dbConnect(RPostgres::Postgres())
-
-# read in raw data
-raw_data <- dbReadTable(con, "doyle_howl_data")
-
-# some furhter data prep
-data <- raw_data %>%
-  mutate(
-      week = date(floor_date(date, "week"))
-    , day  = date(floor_date(date, "day"))
-    , month = date(floor_date(date, "month"))
-    , hour = hour(date) + minute(date) / 60
-    , wday = wday(date)
-    , raw_text = case_when(
-          blog_name == "homers-smut"    ~ paste(question, content)
-        , blog_name == "reed-emissions" ~ paste(content)
-        , blog_name == "reedrelieves"   ~ paste(content)
-    )
-    , page = case_when(
-          blog_name == "homers-smut"    ~ "Reed Releases"
-        , blog_name == "reed-emissions" ~ "Reed Emissions"
-        , blog_name == "reedrelieves"   ~ "Reed Relieves" 
-    )
-    , page = factor(page, levels = c("Reed Releases", "Reed Emissions", "Reed Relieves"))
-    , text = stri_enc_toutf8(raw_text)
-    , text = str_replace_all(text,"’","'")
-    , text = str_replace_all(text, "[[:digit:]]", "")
-    , text = str_replace_all(text,"\u2019s|'s","")
-  )
-
-# Extract preliminary data on words
-data("stop_words")
-data("profanity_google")
-data("freq_first_names")
-data("freq_last_names")
-
-page_words <- data %>%
-  select(page, text) %>%
-  group_by(page) %>%
-  unnest_tokens(word, text, to_lower = TRUE) %>%
-  anti_join(stop_words) %>%
-  count(word, sort = TRUE) %>%
-  mutate(stem = wordStem(word, language = "english")) %>%
-  group_by(page, stem) %>%
-  summarize(
-      word = first(word)
-    , freq = sum(n)
-  ) %>%
-  ungroup() %>%
-  mutate(
-      is_profane = word %in% str_to_lower(profanity_google)
-    , is_name    = word %in% str_to_lower(freq_first_names$Name) | word %in% str_to_lower(freq_last_names$Surname)
-  ) %>%
-  group_by(page)
-
-```
 
 An investigation into the murmurs, musings, and mentions from a memory long forgotten. 
 
@@ -118,22 +31,7 @@ A forlorn exaltation into the cyber-sphere, a weary lover lamenting the invetibl
 
 The first of thousands confessions to follow, all produced anonymously, all managed by a shadowy few secret keepers who would come and go over the proceeding months. In total three incarnations of the service would be wrought over a course of aproximately 18 months, from winter 2012 through the early autumn 2014. **11,485** posts would be made across the three Tumblr pages, which to this day still rest as a memorial to the emotional milue of a point in time; and for many, a continuing source of Google-able nostalgia, and embarassment.
 
-```{r fig.height=3, fig.width=3}
-profane_words <- page_words %>%
-  filter(is_profane) %>%
-  ungroup() %>%
-  group_by(word) %>%
-  summarize(freq = sum(freq))
-
-wordcloud(
-    words = profane_words$word
-  , freq = profane_words$freq
-  , rot.per=0
-  , fixed.asp = FALSE
-  , random.order=FALSE
-  , colors=brewer.pal(11, name = "RdGy")
-)
-```
+![](doylehowl_files/figure-html/unnamed-chunk-1-1.png)<!-- -->
 
 <span style='font-size: small;'>*Most commonly used profanity words in posts*</span>
 
@@ -146,41 +44,9 @@ For the sake of privacy, all names have been removed from the quoted posts. Furt
 ***
 # A brief history of time
 
-```{r fig.height=4, fig.width=8}
-title <- "Posts per month"
-  data %>%
-  group_by(month, page) %>%
-  count() %>%
-  ggplot(aes(x = month, y = n, fill = page)) +
-    geom_col(alpha = 0.7) +
-    xlab("Month") + 
-    ylab("Number of posts") + 
-    labs(fill = "Page") +
-    ggtitle(title) +
-    theme_few(base_size = 12) +
-    scale_x_date(date_labels = format("%b-%Y")) +
-    scale_y_continuous(labels = comma)
-```
+![](doylehowl_files/figure-html/unnamed-chunk-2-1.png)<!-- -->
 
-```{r include=FALSE}
-# summary stats needed for this section
 
-# Average days per week posts were made
-data %>%
-  distinct(week, day) %>%
-  group_by(week) %>%
-  count() %>%
-  ungroup() %>%
-  summarize(
-    avg = mean(n)
-  )
-
-# number of total words
-data %>%
-  select(text) %>%
-  unnest_tokens(word, text, to_lower = TRUE) %>%
-  nrow()
-```
 
 College confession pages were nothing new or unique to Reed or the broader internet in winter 2012. Reed had, over the years, multiple forms of anonymous postings and public internet forums. The Reed College Missed Connections were a popular form of communicating anonymously into the ether. Sent out weekly to the entire student body, the Missed Connections usually had about 10 anonymous blurbs
 
@@ -200,66 +66,50 @@ The Facebook page is where the action would happen. People would comment on the 
 
 This analysis, however, focuses primarily on the anonymous posts themselves. The vast majority of them written by anonymous students in a solitary vacumm, 349,000 words written and submitted by hundreds of ghost writers that will likely remain anonymous for the rest of time.
 
-```{r}
-page_stats <- data %>% 
-  group_by(Page = page) %>% 
-  summarize(
-      "First post" = format(min(day), '%B %d, %Y')
-    , "Last post"  = format(max(day), '%B %d, %Y')
-    ,  Count       = n()
-  )
-  
-page_stats %>%
-   kable("html") %>%
-  kable_styling(bootstrap_options = c("striped", "hover"), full_width = F, position = "left")
-```
+<table class="table table-striped table-hover" style="width: auto !important; ">
+ <thead>
+  <tr>
+   <th style="text-align:left;"> Page </th>
+   <th style="text-align:left;"> First post </th>
+   <th style="text-align:left;"> Last post </th>
+   <th style="text-align:right;"> Count </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:left;"> Reed Releases </td>
+   <td style="text-align:left;"> December 06, 2012 </td>
+   <td style="text-align:left;"> February 06, 2013 </td>
+   <td style="text-align:right;"> 604 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Reed Emissions </td>
+   <td style="text-align:left;"> February 04, 2013 </td>
+   <td style="text-align:left;"> May 11, 2013 </td>
+   <td style="text-align:right;"> 3001 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Reed Relieves </td>
+   <td style="text-align:left;"> May 23, 2013 </td>
+   <td style="text-align:left;"> September 28, 2014 </td>
+   <td style="text-align:right;"> 7880 </td>
+  </tr>
+</tbody>
+</table>
 
 ## Reed Releases
 
 Reed releases was the first, with 604 total posts, it was also the shortest lived lasting exactly three months, from its first post to its signing off notifcation in February 2013. Reed Releases could also be considered the "purest" of the three incarnations as it did not have 
 
-```{r eecho=FALSE, warning=FALSE, message=FALSE, error=FALSE, fig.height=4, fig.width=7}
-releases_words <- page_words %>% filter(page == "Reed Releases")
-wordcloud(
-    words = releases_words$word
-  , freq = releases_words$freq
-  , max.words = 200
-  , fixed.asp = FALSE
-  , random.order=FALSE
-  , rot.per=0
-  , colors=brewer.pal(11, name = "Dark2")
-)
-```
+![](doylehowl_files/figure-html/unnamed-chunk-5-1.png)<!-- -->
 
 ## Reed Emissions
 
-```{r echo=FALSE, fig.height=4, fig.width=7}
-emissions_words <- page_words %>% filter(page == "Reed Emissions")
-wordcloud(
-    words = emissions_words$word
-  , freq = emissions_words$freq
-  , max.words = 200
-  , fixed.asp = FALSE
-  , random.order=FALSE
-  , rot.per=0
-  , colors=brewer.pal(11, name = "Dark2")
-)
-```
+![](doylehowl_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
 
 ## Reed Relieves
 
-```{r echo=FALSE}
-relieves_words <- page_words %>% filter(page == "Reed Relieves")
-wordcloud(
-    words = relieves_words$word
-  , freq = relieves_words$freq
-  , max.words = 200
-  , fixed.asp = FALSE
-  , random.order=FALSE
-  , rot.per=0
-  , colors=rev(brewer.pal(11, name = "Dark2"))
-)
-```
+![](doylehowl_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
 
 ***
 
@@ -267,16 +117,7 @@ wordcloud(
 
 ## Posting patterns
 
-```{r echo=FALSE, fig.height=4, fig.width=8}
-title <- "Figure 2: density of posts by hour in day"
-
-  data %>%
-  ggplot(aes(x = hour, fill = page)) +
-    geom_density(alpha = 0.5, color = rgb(0,0,0,0)) +
-    labs(fill = "Page") +
-    ggtitle(title) +
-    theme_few(base_size = 14)
-```
+![](doylehowl_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
 
 ## Common words
 
@@ -296,33 +137,7 @@ title <- "Figure 2: density of posts by hour in day"
 
 ## What was triggering
 
-```{r fig.height=4, fig.width=4}
-trigger_posts <- data %>%
-  filter(str_detect(str_to_lower(text), "tw:")) %>%
-  ungroup() %>%
-  select(text) %>%
-  unnest_tokens(word, text, to_lower = TRUE) %>%
-  anti_join(stop_words) %>%
-  count(word, sort = TRUE) %>%
-  mutate(stem = wordStem(word, language = "english")) %>%
-  group_by(stem) %>%
-  summarize(
-      word = first(word)
-    , freq = sum(n)
-  ) %>%
-  ungroup() %>% 
-  filter(word != 'tw')
-  
-wordcloud(
-    words = trigger_posts$word
-  , freq = trigger_posts$freq
-  , rot.per=0
-  , fixed.asp = FALSE
-  , random.order=FALSE
-  , colors=brewer.pal(10, name = "RdGy")
-  , size = 10
-)
-```
+![](doylehowl_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
 
 
 ### The horrors we held
@@ -350,7 +165,8 @@ The code blocks below detail how the analysis above was performed
 
 Extracted with `tumblr_utils.py`. This script downloaded the background JSONs for each blog post. The R script below extracts the necessary data from the JSONs and combines into a single table. This table is saved onto the local computer for future analysis and extraction.
 
-```{r eval=FALSE, echo=TRUE}
+
+```r
 # Libraries
 library(tidyverse)
 library(jsonlite)
@@ -411,7 +227,8 @@ dbGetQuery(con, "SELECT COUNT(*) FROM doyle_howl_data;")
 
 ### Basic statistics
 
-```{r echo=TRUE}
+
+```r
 title <- "Density of posts by day in week"
   data %>%
     group_by(page, wday) %>%
@@ -422,7 +239,11 @@ title <- "Density of posts by day in week"
     guides(fill = FALSE) +
     ggtitle(title) +
     theme_few(base_size = 14)
+```
 
+![](doylehowl_files/figure-html/unnamed-chunk-11-1.png)<!-- -->
+
+```r
 title <- "Density of posts by day in week"
 page_words %>%
   group_by(page) %>%
@@ -433,3 +254,5 @@ page_words %>%
   scale_x_continuous(label = percent) +
   ggtitle(title)
 ```
+
+![](doylehowl_files/figure-html/unnamed-chunk-11-2.png)<!-- -->
