@@ -43,7 +43,17 @@ library(knitr)
 library(RColorBrewer)
 
 # connect to pg
-con <- dbConnect(RPostgres::Postgres())
+connection <- read_file("connection.string")
+url <- httr::parse_url(connection)
+
+con <- dbConnect(
+   RPostgres::Postgres()
+  ,dbname   = url$path
+  ,host     = url$hostname
+  ,port     = url$port
+  ,user     = url$username
+  ,password = url$password
+)
 
 # read in raw data
 raw_data <- dbReadTable(con, "doyle_howl_data")
@@ -97,7 +107,6 @@ page_words <- data %>%
     , is_name    = word %in% str_to_lower(freq_first_names$Name) | word %in% str_to_lower(freq_last_names$Surname)
   ) %>%
   group_by(page)
-
 ```
 
 An investigation into the murmurs, musings, and mentions from a memory long forgotten. 
