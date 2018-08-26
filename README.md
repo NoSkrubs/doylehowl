@@ -1,3 +1,17 @@
+---
+title: "Doyle Howl"
+author: "Andrew Watson"
+output:
+  html_document:
+    fig_caption: yes
+    keep_md: yes
+    toc: yes
+    toc_depth: 2
+    toc_float: yes
+---
+
+
+
 An investigation into the murmurs, musings, and mentions from a memory long forgotten. 
 
 ***
@@ -8,17 +22,17 @@ An investigation into the murmurs, musings, and mentions from a memory long forg
 
 It was Dec 6th, 2012 at exactly twenty-seven minutes past midnight that the first howl was heard. Fourteen days before the end of the world, a precursor to what would become confessional apocalypse began. Somewhere, someone, had collected a brief anonymous testimony and posted it on the popular blogging site tumblr.com. The text of this first spark of what would be a raging emotional inferno was simply,
 
-> I know you are leaving Reed forever, but you will never leave my heart. DAT GALLON-GUZZLING TECHNIQUE""
+> I know you are leaving Reed forever, but you will never leave my heart. DAT GALLON-GUZZLING TECHNIQUE
 
 A forlorn exaltation into the cyber-sphere, a weary lover lamenting the invetible departure of their sexual compatriot; and - to add emphasis, a praise of fallacious talent. 
 
 > DAT GALLON-GUZZLING TECHNIQUE
 
-The first of thousands confessions to follow, all produced anonymously, all managed by a shadowy few secret keepers who would come and go over the proceeding months. In total three incarnations of the service would be wrought over a course of aproximately 18 months, from winter 2012 through the early autumn 2014. **11,485** posts would be made across the three Tumblr pages, which to this day still rest as a memorial to the emotional milue of a point in time; and for many, a continuing source of Google-able nostalgia, and embarassment.
+The first of thousands confessions to follow, all produced anonymously, all managed by a shadowy few secret keepers who would come and go over the proceeding months. In total three incarnations of the service would be wrought over a course of aproximately 18 months, from winter 2012 through the early autumn 2014. **11,485** posts would be made across the three Tumblr pages, which to this day still rest as a memorial to the emotional milieu of a point in time; and for many, a continuing source of Google-able nostalgia, and embarassment.
 
 ![](doylehowl_files/figure-html/unnamed-chunk-1-1.png)<!-- -->
-
-<span style='font-size: small;'>*Most commonly used profanity words in posts*</span>
+  
+<span style='font-size: small;'>*Most commonly used profanity words in posts. "Fuck" has been removed to better show the relationships of other words.*</span>
 
 With this memorial though, we can over the distance of time look back at those thoughts, those memories, those incarnations, and begin to understand through the lens of data and analysis what themes, trends, and cultural shifts occured over those 18 months. Although what comes to follow is by no means exhaustive, it is a first pass at what may be a rich source of information at a raw point in time in the lives of students at the Reed College, in Portland, OR.
 
@@ -84,7 +98,7 @@ This analysis, however, focuses primarily on the anonymous posts themselves. The
 
 ## Reed Releases
 
-Reed releases was the first, with 604 total posts, it was also the shortest lived lasting exactly three months, from its first post to its signing off notifcation in February 2013. Reed Releases could also be considered the "purest" of the three incarnations as it did not have 
+Reed releases was the first, with 604 total posts, it was also the shortest lived lasting exactly three months, from its first post to its signing off notifcation in February 2013. Reed Releases could also be considered the "purest" of the three incarnations as it did not have ample time to mature and fester. In the sentiment analysis below we will see that it was also the most positive of the pages, with the smallest share of trigger warnings and negative words [TODO: VALIDATE]. 
 
 ![](doylehowl_files/figure-html/unnamed-chunk-5-1.png)<!-- -->
 
@@ -98,31 +112,52 @@ Reed releases was the first, with 604 total posts, it was also the shortest live
 
 ***
 
-# The frequentist approach
-
-## Posting patterns
-
-![](doylehowl_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
-
-## Common words
-
-## Variation in language over time
-
-## Use of gender
-
-***
-
 # A sentimental journey
 
-## A basic sentiment pass
+Using simple word based sentiment analysis we can begin to 
 
-### The days we wept
 
-### The days we laughed
+
+Below is a comparison of different sentiment scoring methods grouping words into a positive vs negative linear scale (-1 to +1). Across all three methodologies Reed Releases clearly comes across as more positive vs Reed Emissions and its compatriot Reed Relieves. Perhaps this indicates that as the volume of posts increased over time so did the negative sentiment, or perhaps it is evidence of a general souring of virtual mood over the timer period. Either way, the sentiment transition is stark.
+
+<table class="table table-striped table-hover" style="width: auto !important; ">
+ <thead>
+  <tr>
+   <th style="text-align:left;"> Page </th>
+   <th style="text-align:right;"> AFINN </th>
+   <th style="text-align:right;"> Bing </th>
+   <th style="text-align:right;"> EmoLex </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:left;"> Reed Releases </td>
+   <td style="text-align:right;"> 0.32 </td>
+   <td style="text-align:right;"> 0.00 </td>
+   <td style="text-align:right;"> 0.24 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Reed Emissions </td>
+   <td style="text-align:right;"> -0.32 </td>
+   <td style="text-align:right;"> -0.20 </td>
+   <td style="text-align:right;"> 0.13 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Reed Relieves </td>
+   <td style="text-align:right;"> -0.46 </td>
+   <td style="text-align:right;"> -0.27 </td>
+   <td style="text-align:right;"> 0.09 </td>
+  </tr>
+</tbody>
+</table>
+
+When we break this out by month we can 
+
+
 
 ## What was triggering
 
-![](doylehowl_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
+![](doylehowl_files/figure-html/unnamed-chunk-10-1.png)<!-- -->
 
 
 ### The horrors we held
@@ -164,9 +199,9 @@ strip_html <- function(s) {
 
 # list of files
 files <- c(
-   list.files("../tumblr-utils/homers-smut.tumblr.com/json/"    , full.names = TRUE)
- , list.files("../tumblr-utils/reed-emissions.tumblr.com/json/" , full.names = TRUE)
- , list.files("../tumblr-utils/reedrelieves.tumblr.com/json/"   , full.names = TRUE)
+   list.files("../tumblr-utils/reed-releases-jsons/json/"    , full.names = TRUE)
+ , list.files("../tumblr-utils/reed-emissions-jsons/json/" , full.names = TRUE)
+ , list.files("../tumblr-utils/reed-relieves-jsons/json/"   , full.names = TRUE)
 )
 length(files)
 
@@ -226,7 +261,7 @@ title <- "Density of posts by day in week"
     theme_few(base_size = 14)
 ```
 
-![](doylehowl_files/figure-html/unnamed-chunk-11-1.png)<!-- -->
+![](doylehowl_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
 
 ```r
 title <- "Density of posts by day in week"
@@ -240,4 +275,18 @@ page_words %>%
   ggtitle(title)
 ```
 
-![](doylehowl_files/figure-html/unnamed-chunk-11-2.png)<!-- -->
+![](doylehowl_files/figure-html/unnamed-chunk-12-2.png)<!-- -->
+
+***
+
+# The frequentist approach
+
+## Posting patterns
+
+![](doylehowl_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
+
+## Common words
+
+## Variation in language over time
+
+## Use of gender
