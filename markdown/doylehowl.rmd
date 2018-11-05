@@ -84,20 +84,21 @@ data <- raw_data %>%
     , text = str_replace_all(text,"\u2019s|'s","")
   )
 
-# Extract preliminary data on words
+# Bring in Lexicons
 data("stop_words")
 data("profanity_google")
 data("freq_first_names")
 data("freq_last_names")
 
-page_words <- data %>%
-  select(page, text) %>%
-  group_by(page) %>%
+# Extract data on words, frequency summary
+posts_words <- data %>%
+  select(page, text, id) %>%
+  group_by(page, id) %>%
   unnest_tokens(word, text, to_lower = TRUE) %>%
   anti_join(stop_words) %>%
   count(word, sort = TRUE) %>%
   mutate(stem = wordStem(word, language = "english")) %>%
-  group_by(page, stem) %>%
+  group_by(page, stem, id) %>%
   summarize(
       word = first(word)
     , freq = sum(n)
@@ -106,8 +107,41 @@ page_words <- data %>%
   mutate(
       is_profane = word %in% str_to_lower(profanity_google)
     , is_name    = word %in% str_to_lower(freq_first_names$Name) | word %in% str_to_lower(freq_last_names$Surname)
-  ) %>%
-  group_by(page)
+  )
+
+# join on the time stamps for the posts
+posts_tstamps <- data %>% 
+  select(
+     id
+    ,date
+    ,week:wday
+  )
+
+posts_words <- posts_words %>% left_join(posts_tstamps)
+
+# Summarize at page level
+page_words <- posts_words %>% 
+  group_by(
+     page
+    ,stem
+    ,word
+  ) %>% 
+  summarize(
+    freq = sum(freq)
+  ) %>% 
+  group_by(
+     page
+    ,stem
+  ) %>% 
+  summarize(
+     word = first(word, desc(freq)) # select common word by stem
+    ,freq = sum(freq)
+  ) %>% 
+  ungroup() %>%
+  mutate(
+      is_profane = word %in% str_to_lower(profanity_google)
+    , is_name    = word %in% str_to_lower(freq_first_names$Name) | word %in% str_to_lower(freq_last_names$Surname)
+  )
 ```
 
 An investigation into the murmurs, musings, and mentions from a memory long forgotten. 
@@ -126,9 +160,9 @@ A forlorn exaltation into the cyber-sphere, a weary lover lamenting the invetibl
 
 > DAT GALLON-GUZZLING TECHNIQUE
 
-The first of thousands confessions to follow, all produced anonymously, all managed by a shadowy few secret keepers who would come and go over the proceeding months. In total three incarnations of the service would be wrought over a course of aproximately 18 months, from winter 2012 through the early autumn 2014. **11,485** posts would be made across the three Tumblr pages, which to this day still rest as a memorial to the emotional milieu of a point in time; and for many, a continuing source of Google-able nostalgia, and embarassment.
+The first of thousands confessions to follow, all produced anonymously, all managed by a shadowy few secret keepers who would come and go over the proceeding months. In total three incarnations of the service would be wrought over a course of aproximately 18 months, from winter 2012 through the early autumn 2014. `r nrow(data)` posts would be made across the three Tumblr pages, which to this day still rest as a memorial to the emotional milieu of a point in time; and for many, a continuing source of Google-able nostalgia, and embarassment.
 
-```{r fig.height=3, fig.width=3}
+```{r}
 profane_words <- page_words %>%
   filter(is_profane) %>%
   ungroup() %>%
@@ -142,6 +176,7 @@ wordcloud(
   , rot.per = 0
   , fixed.asp = FALSE
   , random.order = FALSE
+  , min.freq = 1
   , colors=brewer.pal(11, name = "RdGy")
 )
 ```
@@ -228,7 +263,7 @@ page_stats %>%
 
 ## Reed Releases
 
-Reed releases was the first, with 604 total posts, it was also the shortest lived lasting exactly three months, from its first post to its signing off notifcation in February 2013. Reed Releases could also be considered the "purest" of the three incarnations as it did not have ample time to mature and fester. In the sentiment analysis below we will see that it was also the most positive of the pages, with the smallest share of trigger warnings and negative words [TODO: VALIDATE]. 
+Reed releases was the first, with `r nrow(filter(data, blog_name == 'Reed Releases'))` total posts, it was also the shortest lived lasting exactly three months, from its first post to its signing off notifcation in February 2013. Reed Releases could also be considered the "purest" of the three incarnations as it did not have ample time to mature and fester. In the sentiment analysis below we will see that it was also the most positive of the pages, with the smallest share of trigger warnings and negative words [TODO: VALIDATE]. 
 
 ```{r}
 releases_words <- page_words %>% filter(page == "Reed Releases")
@@ -277,48 +312,70 @@ wordcloud(
 
 # A sentimental journey
 
-Using simple word based sentiment analysis we can begin to 
+Using simple word based sentiment analysis we can begin to see the mood in the language shift over time. The posts were often volatile, with some revealing deep personal horrors and others expressions of pure joy. Peoples memories of the best and worst times of their lives were hurridly typed into the cybersphere for the college to enjoy, discuss, debate, and more often than not - ridicule. A sentiment based aggregation of these posts can reveal that emotional volatility that so permeated the school during those years.
 
 ```{r include=FALSE}
-# combine all sentiments into single df
-words_sentiments <- page_words %>% 
-  left_join(
-    get_sentiments(lexicon = 'afinn') %>% 
-      rename(
-        afinn_score = score
-      )
-  ) %>% 
-  left_join(
-    get_sentiments(lexicon = 'bing') %>% 
-      rename(
-        bing_sentiment = sentiment
-      )
-  ) %>% 
-  left_join(
-    # this contains multiple sentiments per word
-    get_sentiments(lexicon = 'nrc') %>%
-      mutate(value = 1) %>% 
-      spread(key = sentiment, value, fill = 0) 
-  )
+create_sentiment_by_group <- function(words_df, ...) {
+  # combine all sentiments into single df
+  words_sentiments <- words_df %>% 
+    left_join(
+      get_sentiments(lexicon = 'afinn') %>% 
+        rename(
+          afinn_score = score
+        )
+    ) %>% 
+    left_join(
+      get_sentiments(lexicon = 'bing') %>% 
+        rename(
+          bing_sentiment = sentiment
+        )
+    ) %>% 
+    left_join(
+      # this contains multiple sentiments per word
+      get_sentiments(lexicon = 'nrc') %>%
+        mutate(value = 1) %>% 
+        spread(key = sentiment, value, fill = 0) 
+    ) 
+  
+  # for taking weighted average
+  calc_sentiment <- function(sentiment, freq){
+      calc <- sum(sentiment * freq, na.rm = T) / 
+           sum(if_else(!is.na(sentiment), freq, 0L))
+      
+      return(calc)
+  }
+  
+  # collapse the other sentiment calculators into positive vs negative -1 to 1
+  # then summarize results by grouping vars
+  sentiment_by_group <- words_sentiments %>% 
+    mutate(
+       bing_score = if_else(bing_sentiment == 'positive', 1, -1)
+      ,nrc_score  = positive + negative * -1 #this will result in many 0s btw
+    ) %>%
+    group_by(...) %>% 
+    summarize(
+        afinn_n     = sum(ifelse(!is.na(afinn_score), freq, 0))
+      , bing_n      = sum(ifelse(!is.na(bing_score), freq, 0))
+      , nrc_n       = sum(ifelse(!is.na(nrc_score), freq, 0))
+      , afinn_score = calc_sentiment(afinn_score, freq)
+      , bing_score  = calc_sentiment(bing_score, freq)
+      , nrc_score   = calc_sentiment(nrc_score, freq)
+      , n_words     = sum(freq)
+    ) %>% 
+    mutate(
+       afinn_pct = afinn_n / n_words
+      ,bing_pct  = bing_n / n_words
+      ,nrc_pct   = nrc_n / n_words
+    )
+}
 
-# collapse the other sentiment calculators into positive vs negative -1 to 1
-# then summarize results by page
-sentiment_by_page <- words_sentiments %>% 
-  mutate(
-     bing_score = if_else(bing_sentiment == 'positive', 1, -1)
-    ,nrc_score  = positive + negative * -1 #this will result in many 0s btw
-  ) %>%
-  group_by(page) %>% 
-  summarize_at(
-      vars(afinn_score, bing_score, nrc_score)
-     ,funs(
-         sum(. * freq, na.rm = T) / 
-         sum(if_else(!is.na(.), freq, 0L))
-      )
-  )
+# create sentiment by page
+sentiment_by_page <- create_sentiment_by_group(page_words, page)
 ```
 
-Below is a comparison of different sentiment scoring methods grouping words into a positive vs negative linear scale (-1 to +1). Across all three methodologies Reed Releases clearly comes across as more positive vs Reed Emissions and its compatriot Reed Relieves. Perhaps this indicates that as the volume of posts increased over time so did the negative sentiment, or perhaps it is evidence of a general souring of virtual mood over the timer period. Either way, the sentiment transition is stark.
+Below is a comparison of different sentiment scoring methods grouping words into a positive vs negative linear scale (-1 to +1).Of all three methodologies, the EmoLex one from Saif Mohammad and Peter Turney was the most thorough, identifying `r percent(mean(sentiment_by_page$nrc_pct))` of words on average per page.
+
+Reed Releases clearly comes across as more positive vs Reed Emissions and its compatriot Reed Relieves. Perhaps this indicates that as the volume of posts increased over time so did the negative sentiment, or perhaps it is evidence of a general souring of virtual mood over the timer period. Either way, the sentiment transition is stark.
 
 ```{r}
 sentiment_by_page %>%
@@ -335,13 +392,233 @@ sentiment_by_page %>%
   # )
 ```
 
-When we break this out by month we can 
+When broken down by time, certain trends begin to come through. Using the AFINN methodology the steady decline in sentiment per post in Reed Emissions leading up to Renn Fayre 2013 is seen clearly. A similar but less discernable decline is also seen in Reed Relieves.
 
+```{r fig.height=4, fig.width=8}
+renn_fayre_2013 <- ymd(20130503)
+renn_fayre_2014 <- ymd(20140502)
 
+# create sentiment by post, then aggregate the post means
+sentiment_by_post_by_week <- create_sentiment_by_group(posts_words, page, week, id) %>% 
+  group_by(page, week) %>% 
+  summarize(
+     nrc_post_mean   = mean(nrc_score, na.rm = T)
+    ,afinn_post_mean = mean(afinn_score, na.rm = T)
+    ,bing_post_mean  = mean(bing_score, na.rm = T)
+    ,n_posts = n_distinct(id)
+  )
 
-## What was triggering
+sentiment_by_post_by_week %>% 
+  ggplot(aes(
+      x = week
+    , y = afinn_post_mean
+    , group = page
+    , color = page
+  )) +
+  geom_point(aes(size = n_posts), alpha = 0.5) +
+  theme_few(base_size = 12) +
+  scale_x_date(date_labels = format("%b-%Y"), date_breaks = "3 months") +
+  scale_y_continuous(breaks = seq(-1.5, 1.5, 0.5)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  geom_vline(xintercept = renn_fayre_2013, color = 'grey', alpha = 0.5) +
+  geom_vline(xintercept = renn_fayre_2014, color = 'grey', alpha = 0.5) +
+  ggplot2::annotate(
+      x = renn_fayre_2013
+    , y = 1
+    , geom = 'text'
+    , label = "Renn Fayre 2013"
+    , hjust = -0.1
+    , alpha = 0.8
+    , size = 3
+  ) +
+  ggplot2::annotate(
+      x = renn_fayre_2014
+    , y = 1
+    , geom = 'text'
+    , label = "Renn Fayre 2014"
+    , hjust = -0.1
+    , alpha = 0.8
+    , size = 3
+  ) +
+  guides(size = 'none') +
+  labs(
+      color = ""
+    , x = ""
+    , y = "sentiment"
+  ) +
+  ggtitle(
+     "Mean post sentiment by week"
+    ,subtitle = 'AFINN score'
+  )
+```
 
-```{r fig.height=4, fig.width=4}
+This pattern would play nicely into Reed cultural narratives around Spring Crises, Junior Quals, and the stress of senior theses. We can start to verify this by observing the frequencey of posts with mentions of the stem or word 'thesis', 'midterm' and or 'qual'.
+
+```{r fig.height=4, fig.width=8}
+# create sentiment by post, then aggregate the post means
+sentiment_by_post_by_day <- create_sentiment_by_group(posts_words, page, day, id) %>% 
+  group_by(page, day) %>% 
+  summarize(
+     nrc_post_mean   = mean(nrc_score, na.rm = T)
+    ,afinn_post_mean = mean(afinn_score, na.rm = T)
+    ,bing_post_mean  = mean(bing_score, na.rm = T)
+    ,n_posts = n_distinct(id)
+  )
+
+# grab # of mentions of 'thesis' by day
+thesis_frequency <- posts_words %>% 
+  filter(
+      stem %in% c('thesis', 'qual', 'midterm') 
+    | word == 'thesis'
+  ) %>% 
+  group_by(day, page) %>%
+  summarize(
+     n_thesis_posts = n_distinct(id)
+  ) %>% 
+  left_join(sentiment_by_post_by_day)
+
+thesis_frequency %>% 
+  #filter(n_posts > 10) %>% 
+  ggplot(aes(
+      x = day
+    , y = n_thesis_posts / n_posts
+    , group = page
+    , color = page
+    , size = n_posts
+  )) +
+  geom_point(alpha = 0.5) +
+  theme_few(base_size = 12) +
+  scale_x_date(date_labels = format("%b-%Y"), date_breaks = "3 months") +
+  scale_y_continuous(label = percent) +
+  coord_cartesian(ylim = c(0, 0.25)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  geom_vline(xintercept = renn_fayre_2013, color = 'grey', alpha = 0.5) +
+  geom_vline(xintercept = renn_fayre_2014, color = 'grey', alpha = 0.5) +
+  ggplot2::annotate(
+      x = renn_fayre_2013
+    , y = 0.2
+    , geom = 'text'
+    , label = "Renn Fayre 2013"
+    , hjust = -0.15
+    , alpha = 0.8
+    , size = 3
+  ) +
+  ggplot2::annotate(
+      x = renn_fayre_2014
+    , y = 0.2
+    , geom = 'text'
+    , label = "Renn Fayre 2014"
+    , hjust = -0.1
+    , alpha = 0.8
+    , size = 3
+  ) +
+  guides(size = 'none') +
+  labs(
+      color = ""
+    , x = ""
+    , y = "share"
+  ) +
+  ggtitle("Share of posts with 'thesis', 'midterm' or 'qual' by day")
+```
+
+The trend is mostly how we would expect. The days leading up to and the week of Renn Fayre see the highest frequency of posts mentioning these stressful, then potentially joyous activities. This is particularly pronounced in the data for Reed Emissions, which sees a steady upward trend of frequencies, mimicing the same trend in declining sentiment.
+
+This, however, can be a sell fulfilling prophecy. Taking a purely exploratory approach we can tease apart the terms mentioned most frequently in those days with the lowest sentiment.
+
+```{r}
+# perform counts of words most mentioned in low sentiment days
+low_sentiment_days <- sentiment_by_post_by_day %>% 
+  filter(n_posts > 10) %>% 
+  ungroup() %>% 
+  top_n(10, -afinn_post_mean) %>% 
+  inner_join(posts_words) %>% 
+  group_by(word) %>% 
+  summarize(
+    freq = sum(freq)
+  )
+
+wordcloud(
+    words         = low_sentiment_days$word
+  , freq          = low_sentiment_days$freq
+  , rot.per       = 0
+  , fixed.asp     = FALSE
+  , random.order  = FALSE
+  , colors        = brewer.pal(10, name = "RdGy")
+  #, size          = 10
+)
+```
+
+And compare then the same with the high sentiment days
+
+```{r}
+# perform counts of words most mentioned in low sentiment days
+high_sentiment_days <- sentiment_by_post_by_day %>% 
+  filter(n_posts > 10) %>% 
+  ungroup() %>% 
+  top_n(10, afinn_post_mean) %>% 
+  inner_join(posts_words) %>% 
+  group_by(word) %>% 
+  summarize(
+    freq = sum(freq)
+  )
+
+wordcloud(
+    words         = high_sentiment_days$word
+  , freq          = high_sentiment_days$freq
+  , rot.per       = 0
+  , fixed.asp     = FALSE
+  , random.order  = FALSE
+  , colors        = brewer.pal(10, name = "Dark2")
+  #, size          = 10
+)
+```
+
+Then to truly visualize the difference, observe the words that are not shared across the two sets. 
+
+We can start on a positive note with the high sentiment days. 
+
+```{r}
+high_sentiment_only <- high_sentiment_days %>% anti_join(low_sentiment_days %>% distinct(word))
+
+wordcloud(
+    words         = high_sentiment_only$word
+  , freq          = high_sentiment_only$freq
+  , rot.per       = 0
+  , fixed.asp     = FALSE
+  , random.order  = FALSE
+  , min.freq      = 2 
+  , colors        = brewer.pal(10, name = "Dark2")
+  #, size          = 10
+)
+```
+
+Now contrast that with the words we see on the bottom 10 sentiment days that are *not* present in words seen in the top 10 sentiment days.
+
+```{r}
+low_sentiment_only <- low_sentiment_days %>% anti_join(high_sentiment_days %>% distinct(word))
+
+wordcloud(
+    words         = low_sentiment_only$word
+  , freq          = low_sentiment_only$freq
+  , rot.per       = 0
+  , fixed.asp     = FALSE
+  , random.order  = FALSE
+  , colors        = brewer.pal(10, name = "RdGy")
+  , min.freq      = 2 
+
+  #, size          = 10
+)
+```
+
+The difference is striking - and incredibly revealing. It's the stuff of life that sets them apart, and most importantly, the stuff of life related to trauma. The fact that not a single post labeled with a trigger warning was located in the top 10 happiest days on these pages casts a new light on the content, and requires us to go deeper.
+
+It's not theses, or midterms, or quals that appear to dictate the mood of the populous. It's trauma, assault, sex, mental health, and identity. The record of that trauma sits in these posts like a mass grave. Through the lens of data we can hope to exhume these years old traumas, and attempt to see how deep that trauma lives.
+
+***
+
+## The triggers
+
+```{r}
 trigger_posts <- data %>%
   filter(str_detect(str_to_lower(text), "tw:")) %>%
   ungroup() %>%
@@ -365,7 +642,7 @@ wordcloud(
   , fixed.asp     = FALSE
   , random.order  = FALSE
   , colors        = brewer.pal(10, name = "RdGy")
-  , size          = 10
+  #, size          = 10
 )
 ```
 
