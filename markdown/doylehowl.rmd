@@ -17,7 +17,10 @@ knitr::opts_chunk$set(message    = FALSE)
 knitr::opts_chunk$set(error      = FALSE)
 knitr::opts_chunk$set(fig.height = 4)
 knitr::opts_chunk$set(fig.width  = 8)
+```
 
+
+```{r}
 ## LIBRARIES
 # Core data manipulation libraries
 library(tidyverse) 
@@ -71,13 +74,15 @@ data <- raw_data %>%
           blog_name == "homers-smut"    ~ paste(question, content)
         , blog_name == "reed-emissions" ~ paste(content)
         , blog_name == "reedrelieves"   ~ paste(content)
+        , blog_name == 'rerereves'      ~ paste(content)
     )
     , page = case_when(
           blog_name == "homers-smut"    ~ "Reed Releases"
         , blog_name == "reed-emissions" ~ "Reed Emissions"
-        , blog_name == "reedrelieves"   ~ "Reed Relieves" 
+        , blog_name == "reedrelieves"   ~ "Reed Relieves"
+        , blog_name == 'rerereves'      ~ "Re-Rereves"
     )
-    , page = factor(page, levels = c("Reed Releases", "Reed Emissions", "Reed Relieves"), ordered = T)
+    , page = factor(page, levels = c("Reed Releases", "Reed Emissions", "Reed Relieves", "Re-Rereves"), ordered = T)
     , text = stri_enc_toutf8(raw_text)
     , text = str_replace_all(text,"’","'")
     , text = str_replace_all(text, "[[:digit:]]", "")
@@ -306,6 +311,21 @@ wordcloud(
   , rot.per=0
   , colors=rev(brewer.pal(11, name = "Dark2"))
 )
+```
+
+## Re-Rereves
+
+```{r echo=FALSE}
+# rereves_words <- page_words %>% filter(page == "Re-Rereves")
+# wordcloud(
+#     words = rereves_words$word
+#   , freq = rereves_words$freq
+#   , max.words = 200
+#   , fixed.asp = FALSE
+#   , random.order=FALSE
+#   , rot.per=0
+#   , colors=rev(brewer.pal(11, name = "Dark2"))
+# )
 ```
 
 ***
@@ -685,9 +705,11 @@ strip_html <- function(s) {
 
 # list of files
 files <- c(
-   list.files("../tumblr-utils/reed-releases-jsons/json/"    , full.names = TRUE)
- , list.files("../tumblr-utils/reed-emissions-jsons/json/" , full.names = TRUE)
- , list.files("../tumblr-utils/reed-relieves-jsons/json/"   , full.names = TRUE)
+   list.files("../tumblr-utils/homers-smut.tumblr.com/json/", full.names = TRUE)
+ , list.files("../tumblr-utils/reed-emissions.tumblr.com/json/", full.names = TRUE)
+ , list.files("../tumblr-utils/reedrelieves.tumblr.com/json/", full.names = TRUE)
+ , list.files("../tumblr-utils/rerereves.tumblr.com/json/", full.names = TRUE)
+
 )
 length(files)
 
@@ -719,16 +741,29 @@ for (file in files) {
 
   data <- data %>% bind_rows(jsonTibble)
 }
+```
 
-# Save data to local postgres db
+You can then perform the heroku upload
+
+```{r eval=FALSE}
+# Save data to Heroku
 library(RPostgres)
 library(DBI)
 
-con <- dbConnect(RPostgres::Postgres())
-dbWriteTable(con, "doyle_howl_data", data, overwrite = TRUE)
+# connect to pg
+connection <- read_file("connection.string")
+url <- httr::parse_url(connection)
 
-# check it there
-dbGetQuery(con, "SELECT COUNT(*) FROM doyle_howl_data;")
+con <- dbConnect(
+   RPostgres::Postgres()
+  ,dbname   = url$path
+  ,host     = url$hostname
+  ,port     = url$port
+  ,user     = url$username
+  ,password = url$password
+)
+
+dbWriteTable(con, "doyle_howl_data_temp", data, overwrite = TRUE)
 ```
 
 ### Basic statistics
