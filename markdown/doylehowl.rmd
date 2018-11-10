@@ -60,7 +60,7 @@ con <- dbConnect(
 )
 
 # read in raw data
-raw_data <- dbReadTable(con, "doyle_howl_data")
+raw_data <- dbReadTable(con, "doyle_howl_data_temp")
 
 # some furhter data prep
 data <- raw_data %>%
@@ -253,16 +253,26 @@ The Facebook page is where the action would happen. People would comment on the 
 This analysis, however, focuses primarily on the anonymous posts themselves. The vast majority of them written by anonymous students in a solitary vacumm, 349,000 words written and submitted by hundreds of ghost writers that will likely remain anonymous for the rest of time.
 
 ```{r}
+words_summary <- page_words %>% 
+  group_by(Page = page) %>% 
+  summarize(
+    'Unique words' = n_distinct(word)
+  )
+
 page_stats <- data %>% 
   group_by(Page = page) %>% 
   summarize(
       "First post" = format(min(day), '%B %d, %Y')
     , "Last post"  = format(max(day), '%B %d, %Y')
-    ,  Count       = n()
+    ,  "Posts"       = n()
+  ) %>% 
+  left_join(words_summary) %>% 
+  mutate(
+    "Words per post" = round(`Unique words` / Posts, 2)
   )
   
 page_stats %>%
-   kable("html") %>%
+  kable("html") %>%
   kable_styling(bootstrap_options = c("striped", "hover"), full_width = F, position = "left")
 ```
 
@@ -640,7 +650,9 @@ It's not theses, or midterms, or quals that appear to dictate the mood of the po
 
 ```{r}
 trigger_posts <- data %>%
-  filter(str_detect(str_to_lower(text), "tw:")) %>%
+  filter(
+    str_detect(str_to_lower(text), "tw:") | str_detect(str_to_lower(text), "cw:")
+   ) %>%
   ungroup() %>%
   select(text) %>%
   unnest_tokens(word, text, to_lower = TRUE) %>%
@@ -653,7 +665,7 @@ trigger_posts <- data %>%
     , freq = sum(n)
   ) %>%
   ungroup() %>% 
-  filter(word != 'tw')
+  filter(! word %in% c('tw','cw'))
   
 wordcloud(
     words         = trigger_posts$word
