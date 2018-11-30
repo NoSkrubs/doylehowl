@@ -45,24 +45,28 @@ library(wordcloud)
 library(kableExtra)
 library(knitr)
 library(RColorBrewer)
+library(ggrepel)
 
 # connect to pg
 connection <- read_file("connection.string")
 url <- httr::parse_url(connection)
 
-con <- dbConnect(
-   RPostgres::Postgres()
-  ,dbname   = url$path
-  ,host     = url$hostname
-  ,port     = url$port
-  ,user     = url$username
-  ,password = url$password
-)
+# con <- dbConnect(
+#    RPostgres::Postgres()
+#   ,dbname   = url$path
+#   ,host     = url$hostname
+#   ,port     = url$port
+#   ,user     = url$username
+#   ,password = url$password
+# )
+
+# local connection
+con <- dbConnect(RPostgres::Postgres())
 
 # read in raw data
-raw_data <- dbReadTable(con, "doyle_howl_data_temp")
+raw_data <- dbReadTable(con, "doyle_howl_data")
 
-# some furhter data prep
+# some further data prep
 data <- raw_data %>%
   mutate(
       week  = date(floor_date(date, "week"))
@@ -89,11 +93,25 @@ data <- raw_data %>%
     , text = str_replace_all(text,"\u2019s|'s","")
   )
 
+# filter out Re-Rereves
+data <- data %>% filter(page != 'Re-Rereves')
+
 # Bring in Lexicons
 data("stop_words")
 data("profanity_google")
 data("freq_first_names")
 data("freq_last_names")
+
+# cut the names down a bit to grab common ones
+freq_names <- freq_first_names %>% 
+  top_n(1200, n) %>%  # roughly top 20%
+  select(name = Name) %>% 
+  bind_rows(
+    freq_last_names %>% 
+      top_n(3000, n) %>%  # roughly top 20%
+      select(name = Surname)
+  ) %>% 
+  distinct()
 
 # Extract data on words, frequency summary
 posts_words <- data %>%
@@ -111,7 +129,15 @@ posts_words <- data %>%
   ungroup() %>%
   mutate(
       is_profane = word %in% str_to_lower(profanity_google)
-    , is_name    = word %in% str_to_lower(freq_first_names$Name) | word %in% str_to_lower(freq_last_names$Surname)
+    , is_name    = word %in% str_to_lower(freq_names$name)
+  )
+
+# join on a tw / cw flag
+posts_triggers <- posts_words %>% 
+  filter(word %in% c('tw','cw')) %>% 
+  transmute(
+    id,
+    post_is_triggering = TRUE
   )
 
 # join on the time stamps for the posts
@@ -122,7 +148,13 @@ posts_tstamps <- data %>%
     ,week:wday
   )
 
-posts_words <- posts_words %>% left_join(posts_tstamps)
+# combine
+posts_words <- posts_words %>% 
+  left_join(posts_triggers) %>% 
+  mutate(
+    post_is_triggering = coalesce(post_is_triggering, FALSE)
+  ) %>% 
+  left_join(posts_tstamps)
 
 # Summarize at page level
 page_words <- posts_words %>% 
@@ -145,7 +177,7 @@ page_words <- posts_words %>%
   ungroup() %>%
   mutate(
       is_profane = word %in% str_to_lower(profanity_google)
-    , is_name    = word %in% str_to_lower(freq_first_names$Name) | word %in% str_to_lower(freq_last_names$Surname)
+    , is_name    = word %in% str_to_lower(freq_names$name)
   )
 ```
 
@@ -172,27 +204,26 @@ profane_words <- page_words %>%
   filter(is_profane) %>%
   ungroup() %>%
   group_by(word) %>%
-  summarize(freq = sum(freq)) %>% 
-  filter(word != 'fuck')
+  summarize(freq = sum(freq))
 
 wordcloud(
     words = profane_words$word
-  , freq = profane_words$freq
+  , freq = log(profane_words$freq)
   , rot.per = 0
   , fixed.asp = FALSE
   , random.order = FALSE
-  , min.freq = 1
-  , colors=brewer.pal(11, name = "RdGy")
+  , min.freq = 0
+  , colors = rev(brewer.pal(11, name = "Dark2"))
 )
 ```
   
-<span style='font-size: small;'>*Most commonly used profanity words in posts. "Fuck" has been removed to better show the relationships of other words.*</span>
+<span style='font-size: small;'>*Most commonly used profanity words in posts. Sizes are scaled to log of frequency*</span>
 
 With this memorial though, we can over the distance of time look back at those thoughts, those memories, those incarnations, and begin to understand through the lens of data and analysis what themes, trends, and cultural shifts occured over those 18 months. Although what comes to follow is by no means exhaustive, it is a first pass at what may be a rich source of information at a raw point in time in the lives of students at the Reed College, in Portland, OR.
 
 ## The right to forget
 
-For the sake of privacy, all names have been removed from the quoted posts. Furthermore, the raw data of this analysis, and the location of the pages, is intentionally removed from this analysis and Github page. As we will all begin to see, some things we forget should remain forgotten
+For the sake of privacy, all names have been removed from the quoted posts. Furthermore, the raw data of this analysis, and the location of the pages, is intentionally removed from this analysis and Github page. As we will all begin to see, some things we forget should remain forgotten.
 
 ***
 # A brief history of time
@@ -204,39 +235,40 @@ data %>%
   count() %>%
 ggplot(aes(x = month, y = n, fill = page)) +
   ggtitle("Posts by month") +
-  geom_col(alpha = 0.7) +
+  geom_col() +
   xlab("Month") + 
   ylab("Number of posts") + 
   labs(fill = "Page") +
   theme_few(base_size = 12) +
   scale_x_date(date_labels = format("%b-%Y"), date_breaks = "3 months") +
   scale_y_continuous(labels = comma) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_few()
 ```
 
 ```{r include=FALSE}
-# summary stats needed for this section
-
 # Average days per week posts were made
-data %>%
+avg_days_per_week <- data %>%
   distinct(week, day) %>%
   group_by(week) %>%
   count() %>%
   ungroup() %>%
   summarize(
     avg = mean(n)
-  )
+  ) %>% 
+  pull(avg)
 
 # number of total words
-data %>%
+total_number_of_words <- data %>%
   select(text) %>%
   unnest_tokens(word, text, to_lower = TRUE) %>%
-  nrow()
+  nrow() %>% 
+  comma()
 ```
 
 College confession pages were nothing new or unique to Reed or the broader internet in winter 2012. Reed had, over the years, multiple forms of anonymous postings and public internet forums. The Reed College Missed Connections were a popular form of communicating anonymously into the ether. Sent out weekly to the entire student body, the Missed Connections usually had about 10 anonymous blurbs
 
-Although called different things, and run by different people, all three pages mantained a simple structure. Anonymous posts were submitted to the Tumblr pages via the questions feature. Four days out of the week the posts would be copied by administrators of the various pages (admins) and pasted onto the Tumblr and a Facebook page or group. A few early rules of conduct prevailed,
+Although called different things, and run by different people, all three pages mantained a simple structure. Anonymous posts were submitted to the Tumblr pages via the questions feature. On average `r round(avg_days_per_week)` days out of the week the posts would be copied by administrators of the various pages (admins) and pasted onto the Tumblr and a Facebook page or group. A few early rules of conduct prevailed,
 
   - If a person was named in a post, the admins would message that person directly (usually on Facebook) and ask for their consent to post
   - Any posts showing troubling or triggering content were branded with a "TW:" tag
@@ -250,35 +282,60 @@ The Facebook page is where the action would happen. People would comment on the 
 
 > RR 5059: What’s the best way to inform a white person that their dreads are gross (both physically dirty and racist)?
 
-This analysis, however, focuses primarily on the anonymous posts themselves. The vast majority of them written by anonymous students in a solitary vacumm, 349,000 words written and submitted by hundreds of ghost writers that will likely remain anonymous for the rest of time.
+This analysis, however, focuses primarily on the anonymous posts themselves. The vast majority of them written by anonymous students in a solitary vacumm, `r total_number_of_words` words written and submitted by hundreds of ghost writers that will likely remain anonymous for the rest of time.
 
 ```{r}
+# info about words in post
 words_summary <- page_words %>% 
   group_by(Page = page) %>% 
   summarize(
-    'Unique words' = n_distinct(word)
+      'Unique words'= n_distinct(word)
+    , '% profane'   = (sum(ifelse(is_profane, freq, 0)) / sum(freq))
+    , '% names'     = (sum(ifelse(is_name, freq, 0)) / sum(freq))
   )
 
+# info at the post level 
+posts_summary <- posts_words %>% 
+  group_by(id, Page = page) %>% 
+  summarize(
+      freq = sum(freq)
+    , post_is_triggering = sum(post_is_triggering) > 0
+  ) %>% 
+  group_by(Page) %>% 
+  summarize(
+      "Mean post length"      = mean(freq)
+    , "# of triggering posts" = sum(post_is_triggering)
+  )
+
+# pull together
 page_stats <- data %>% 
   group_by(Page = page) %>% 
   summarize(
       "First post" = format(min(day), '%B %d, %Y')
     , "Last post"  = format(max(day), '%B %d, %Y')
-    ,  "Posts"       = n()
+    , "Posts"      = n()
   ) %>% 
+  left_join(posts_summary) %>% 
   left_join(words_summary) %>% 
-  mutate(
-    "Words per post" = round(`Unique words` / Posts, 2)
+  select(
+     Page:`Mean post length`
+    ,`Unique words`
+    ,`# of triggering posts`
+    ,`% profane`
+    ,`% names`
   )
-  
+
+# output
 page_stats %>%
-  kable("html") %>%
-  kable_styling(bootstrap_options = c("striped", "hover"), full_width = F, position = "left")
+  mutate_at(vars(`% profane`, `% names`), funs(percent(., accuracy = 0.1))) %>%
+  mutate_if(is.numeric, comma) %>% 
+  kable("html", escape = F, align = c('l','l','l', rep('r', ncol(page_stats) - 3))) %>%
+  kable_styling(bootstrap_options = c("striped", "hover"), full_width = F)
 ```
 
 ## Reed Releases
 
-Reed releases was the first, with `r nrow(filter(data, blog_name == 'Reed Releases'))` total posts, it was also the shortest lived lasting exactly three months, from its first post to its signing off notifcation in February 2013. Reed Releases could also be considered the "purest" of the three incarnations as it did not have ample time to mature and fester. In the sentiment analysis below we will see that it was also the most positive of the pages, with the smallest share of trigger warnings and negative words [TODO: VALIDATE]. 
+Reed releases was the first, with `r nrow(filter(data, blog_name == 'Reed Releases'))` total posts, it was also the shortest lived lasting exactly three months, from its first post to its signing off notifcation in February 2013. Reed Releases could also be considered the "purest" of the three incarnations as it did not have ample time to mature and fester. In the sentiment analysis below we will see that it was also the most positive of the pages. Also, notably, Reed Releases didn't have any posts that were formally tagged with a trigger warning.
 
 ```{r}
 releases_words <- page_words %>% filter(page == "Reed Releases")
@@ -293,7 +350,39 @@ wordcloud(
 )
 ```
 
+Reed Releases, like the weekly Missed Connections, was focused more on the 1 on 1 interactions that students would have with each other in passing. Posts were often directed at named students, and were confessions of affection, appreciation, or love for one another. This positive appeal is perhaps what drew students to Reed Releases originally, it was a place to see the anamorous outpouring of the college's soul.
+
+> I can't think of anything else except the way you held me. You electrify me, from the bottom of my feet to the flower in my hair. C'mon, let's get our hearts thumping in time and space once again. What do we have to lose?
+
+The gensis of Reed Releases was also well timed. The page start posting on `r page_stats %>% filter(Page == 'Reed Releases') %>% pull('First post')`. The day after the [last day of classes](https://www.reed.edu/registrar/pdfs/reed-academic-calendar-2012-2013.pdf) for the fall semseter in 2012. Although it was on the At Reed the last day of classes for the fall semester is normally on the Wednesday preceding finals week. This is so that the Thursday and Friday
+
+```{r}
+data %>% 
+  filter(page == 'Reed Releases') %>% 
+  count(day) %>% 
+  mutate(
+    time_category = case_when(
+       day < '2012-12-06' ~ 'Fall Semester'
+      ,day < '2012-12-10' ~ 'Reading Week'
+      ,day < '2012-12-14' ~ 'Finals'
+      ,day < '2013-01-21' ~ 'Winter Break'
+      ,day < '2013-01-28' ~ 'Paideia'
+      ,TRUE               ~ 'Spring Semester'
+    )
+  ) %>% 
+ggplot(aes(x = day, y = n, fill = time_category)) + 
+  geom_col() +
+  theme_few(base_size = 18) +
+  xlab('Day') +
+  ylab('# of posts') +
+  ggtitle("Reed Releases posts by day") +
+  labs(fill = "")
+```
+
+
 ## Reed Emissions
+
+Reed Emissions was the second.
 
 ```{r echo=FALSE, fig.height=4, fig.width=7}
 emissions_words <- page_words %>% filter(page == "Reed Emissions")
@@ -319,23 +408,8 @@ wordcloud(
   , fixed.asp = FALSE
   , random.order=FALSE
   , rot.per=0
-  , colors=rev(brewer.pal(11, name = "Dark2"))
+  , colors = rev(brewer.pal(11, name = "Dark2"))
 )
-```
-
-## Re-Rereves
-
-```{r echo=FALSE}
-# rereves_words <- page_words %>% filter(page == "Re-Rereves")
-# wordcloud(
-#     words = rereves_words$word
-#   , freq = rereves_words$freq
-#   , max.words = 200
-#   , fixed.asp = FALSE
-#   , random.order=FALSE
-#   , rot.per=0
-#   , colors=rev(brewer.pal(11, name = "Dark2"))
-# )
 ```
 
 ***
@@ -449,6 +523,7 @@ sentiment_by_post_by_week %>%
   theme_few(base_size = 12) +
   scale_x_date(date_labels = format("%b-%Y"), date_breaks = "3 months") +
   scale_y_continuous(breaks = seq(-1.5, 1.5, 0.5)) +
+  scale_color_few() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   geom_vline(xintercept = renn_fayre_2013, color = 'grey', alpha = 0.5) +
   geom_vline(xintercept = renn_fayre_2014, color = 'grey', alpha = 0.5) +
@@ -520,6 +595,7 @@ thesis_frequency %>%
   theme_few(base_size = 12) +
   scale_x_date(date_labels = format("%b-%Y"), date_breaks = "3 months") +
   scale_y_continuous(label = percent) +
+  scale_color_few() +
   coord_cartesian(ylim = c(0, 0.25)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   geom_vline(xintercept = renn_fayre_2013, color = 'grey', alpha = 0.5) +
@@ -635,8 +711,6 @@ wordcloud(
   , random.order  = FALSE
   , colors        = brewer.pal(10, name = "RdGy")
   , min.freq      = 2 
-
-  #, size          = 10
 )
 ```
 
@@ -649,23 +723,13 @@ It's not theses, or midterms, or quals that appear to dictate the mood of the po
 ## The triggers
 
 ```{r}
-trigger_posts <- data %>%
-  filter(
-    str_detect(str_to_lower(text), "tw:") | str_detect(str_to_lower(text), "cw:")
-   ) %>%
-  ungroup() %>%
-  select(text) %>%
-  unnest_tokens(word, text, to_lower = TRUE) %>%
-  anti_join(stop_words) %>%
-  count(word, sort = TRUE) %>%
-  mutate(stem = wordStem(word, language = "english")) %>%
-  group_by(stem) %>%
+trigger_posts <- posts_words %>% 
+  filter(post_is_triggering) %>% 
+  group_by(word) %>% 
   summarize(
-      word = first(word)
-    , freq = sum(n)
-  ) %>%
-  ungroup() %>% 
-  filter(! word %in% c('tw','cw'))
+    freq = sum(freq)
+  ) %>% 
+  filter(! word %in% c('cw','tw'))
   
 wordcloud(
     words         = trigger_posts$word
@@ -674,7 +738,6 @@ wordcloud(
   , fixed.asp     = FALSE
   , random.order  = FALSE
   , colors        = brewer.pal(10, name = "RdGy")
-  #, size          = 10
 )
 ```
 
@@ -696,11 +759,71 @@ wordcloud(
 
 My name is Andrew. 
 
-## The code
+## Basic statistics
 
-The code blocks below detail how the analysis above was performed
+### Day of week posts
 
-### Data preperation
+```{r}
+# day in week
+data %>%
+  group_by(page, wday) %>%
+  count() %>%
+ggplot(aes(x = wday, y = n, fill = page)) +
+  geom_col(alpha = 0.5) +
+  facet_wrap(~page) +
+  guides(fill = FALSE) +
+  ggtitle("Count of posts by day in week") +
+  theme_few(base_size = 14) +
+  scale_fill_few()
+```
+
+
+### Hour of day
+
+```{r}
+data %>%
+  ggplot(aes(x = hour, fill = page)) +
+    geom_density(alpha = 0.5) +
+    labs(fill = "Page") +
+    ggtitle("Density of posts by hour in day") +
+    theme_few(base_size = 14) +
+    scale_fill_few()
+```
+
+### Share of top 100 words
+
+```{r}
+page_words %>%
+  group_by(page) %>%
+  mutate(norm_freq = freq / sum(freq)) %>%
+  top_n(100) %>%
+  ggplot(aes(x = norm_freq, fill = page)) + 
+  geom_density(alpha = 0.5) + 
+  scale_x_continuous(label = percent) +
+  ggtitle("Share of total words the top 100 words make up") +
+  theme_minimal() +
+  scale_fill_few()
+```
+
+
+### Words per post
+
+```{r}
+posts_words %>% 
+  group_by(id, Page = page) %>% 
+  summarize(
+    freq = sum(freq)
+  ) %>% 
+  ggplot(aes(x = freq, fill = Page)) +
+    geom_density(alpha = 0.5) +
+    labs(fill = "Page") +
+    ggtitle("Words per post") +
+    theme_few(base_size = 14) +
+    scale_fill_few() +
+    scale_x_log10()
+```
+
+## Data preperation
 
 Extracted with `tumblr_utils.py`. This script downloaded the background JSONs for each blog post. The R script below extracts the necessary data from the JSONs and combines into a single table. This table is saved onto the local computer for future analysis and extraction.
 
@@ -776,48 +899,6 @@ con <- dbConnect(
 )
 
 dbWriteTable(con, "doyle_howl_data_temp", data, overwrite = TRUE)
-```
-
-### Basic statistics
-
-```{r echo=TRUE}
-title <- "Density of posts by day in week"
-  data %>%
-    group_by(page, wday) %>%
-    count() %>%
-  ggplot(aes(x = wday, y = n, fill = page)) +
-    geom_col(alpha = 0.5, color = rgb(0,0,0,0)) +
-    facet_wrap(~page) +
-    guides(fill = FALSE) +
-    ggtitle(title) +
-    theme_few(base_size = 14)
-
-title <- "Density of posts by day in week"
-page_words %>%
-  group_by(page) %>%
-  mutate(norm_freq = freq / sum(freq)) %>%
-  top_n(100) %>%
-  ggplot(aes(x = norm_freq, fill = page)) + 
-  geom_density(alpha = 0.5) + 
-  scale_x_continuous(label = percent) +
-  ggtitle(title)
-```
-
-***
-
-# The frequentist approach
-
-## Posting patterns
-
-```{r echo=FALSE, fig.height=4, fig.width=8}
-title <- "Figure 2: density of posts by hour in day"
-
-  data %>%
-  ggplot(aes(x = hour, fill = page)) +
-    geom_density(alpha = 0.5, color = rgb(0,0,0,0)) +
-    labs(fill = "Page") +
-    ggtitle(title) +
-    theme_few(base_size = 14)
 ```
 
 ## Common words

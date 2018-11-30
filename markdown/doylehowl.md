@@ -12,6 +12,9 @@ output:
 
 
 
+
+
+
 An investigation into the murmurs, musings, and mentions from a memory long forgotten. 
 
 ***
@@ -30,26 +33,26 @@ A forlorn exaltation into the cyber-sphere, a weary lover lamenting the invetibl
 
 The first of thousands confessions to follow, all produced anonymously, all managed by a shadowy few secret keepers who would come and go over the proceeding months. In total three incarnations of the service would be wrought over a course of aproximately 18 months, from winter 2012 through the early autumn 2014. 11485 posts would be made across the three Tumblr pages, which to this day still rest as a memorial to the emotional milieu of a point in time; and for many, a continuing source of Google-able nostalgia, and embarassment.
 
-![](doylehowl_files/figure-html/unnamed-chunk-1-1.png)<!-- -->
+![](doylehowl_files/figure-html/unnamed-chunk-2-1.png)<!-- -->
   
-<span style='font-size: small;'>*Most commonly used profanity words in posts. "Fuck" has been removed to better show the relationships of other words.*</span>
+<span style='font-size: small;'>*Most commonly used profanity words in posts. Sizes are scaled to log of frequency*</span>
 
 With this memorial though, we can over the distance of time look back at those thoughts, those memories, those incarnations, and begin to understand through the lens of data and analysis what themes, trends, and cultural shifts occured over those 18 months. Although what comes to follow is by no means exhaustive, it is a first pass at what may be a rich source of information at a raw point in time in the lives of students at the Reed College, in Portland, OR.
 
 ## The right to forget
 
-For the sake of privacy, all names have been removed from the quoted posts. Furthermore, the raw data of this analysis, and the location of the pages, is intentionally removed from this analysis and Github page. As we will all begin to see, some things we forget should remain forgotten
+For the sake of privacy, all names have been removed from the quoted posts. Furthermore, the raw data of this analysis, and the location of the pages, is intentionally removed from this analysis and Github page. As we will all begin to see, some things we forget should remain forgotten.
 
 ***
 # A brief history of time
 
-![](doylehowl_files/figure-html/unnamed-chunk-2-1.png)<!-- -->
+![](doylehowl_files/figure-html/unnamed-chunk-3-1.png)<!-- -->
 
 
 
 College confession pages were nothing new or unique to Reed or the broader internet in winter 2012. Reed had, over the years, multiple forms of anonymous postings and public internet forums. The Reed College Missed Connections were a popular form of communicating anonymously into the ether. Sent out weekly to the entire student body, the Missed Connections usually had about 10 anonymous blurbs
 
-Although called different things, and run by different people, all three pages mantained a simple structure. Anonymous posts were submitted to the Tumblr pages via the questions feature. Four days out of the week the posts would be copied by administrators of the various pages (admins) and pasted onto the Tumblr and a Facebook page or group. A few early rules of conduct prevailed,
+Although called different things, and run by different people, all three pages mantained a simple structure. Anonymous posts were submitted to the Tumblr pages via the questions feature. On average 4 days out of the week the posts would be copied by administrators of the various pages (admins) and pasted onto the Tumblr and a Facebook page or group. A few early rules of conduct prevailed,
 
   - If a person was named in a post, the admins would message that person directly (usually on Facebook) and ask for their consent to post
   - Any posts showing troubling or triggering content were branded with a "TW:" tag
@@ -63,15 +66,20 @@ The Facebook page is where the action would happen. People would comment on the 
 
 > RR 5059: What’s the best way to inform a white person that their dreads are gross (both physically dirty and racist)?
 
-This analysis, however, focuses primarily on the anonymous posts themselves. The vast majority of them written by anonymous students in a solitary vacumm, 349,000 words written and submitted by hundreds of ghost writers that will likely remain anonymous for the rest of time.
+This analysis, however, focuses primarily on the anonymous posts themselves. The vast majority of them written by anonymous students in a solitary vacumm, 349,163 words written and submitted by hundreds of ghost writers that will likely remain anonymous for the rest of time.
 
-<table class="table table-striped table-hover" style="width: auto !important; ">
+<table class="table table-striped table-hover" style="width: auto !important; margin-left: auto; margin-right: auto;">
  <thead>
   <tr>
    <th style="text-align:left;"> Page </th>
    <th style="text-align:left;"> First post </th>
    <th style="text-align:left;"> Last post </th>
-   <th style="text-align:right;"> Count </th>
+   <th style="text-align:right;"> Posts </th>
+   <th style="text-align:right;"> Mean post length </th>
+   <th style="text-align:right;"> Unique words </th>
+   <th style="text-align:right;"> # of triggering posts </th>
+   <th style="text-align:right;"> % profane </th>
+   <th style="text-align:right;"> % names </th>
   </tr>
  </thead>
 <tbody>
@@ -80,35 +88,61 @@ This analysis, however, focuses primarily on the anonymous posts themselves. The
    <td style="text-align:left;"> December 06, 2012 </td>
    <td style="text-align:left;"> February 06, 2013 </td>
    <td style="text-align:right;"> 604 </td>
+   <td style="text-align:right;"> 11 </td>
+   <td style="text-align:right;"> 2,622 </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 2.9% </td>
+   <td style="text-align:right;"> 13.3% </td>
   </tr>
   <tr>
    <td style="text-align:left;"> Reed Emissions </td>
    <td style="text-align:left;"> February 04, 2013 </td>
    <td style="text-align:left;"> May 11, 2013 </td>
-   <td style="text-align:right;"> 3001 </td>
+   <td style="text-align:right;"> 3,001 </td>
+   <td style="text-align:right;"> 9 </td>
+   <td style="text-align:right;"> 5,854 </td>
+   <td style="text-align:right;"> 14 </td>
+   <td style="text-align:right;"> 3.7% </td>
+   <td style="text-align:right;"> 10.2% </td>
   </tr>
   <tr>
    <td style="text-align:left;"> Reed Relieves </td>
    <td style="text-align:left;"> May 23, 2013 </td>
    <td style="text-align:left;"> September 28, 2014 </td>
-   <td style="text-align:right;"> 7880 </td>
+   <td style="text-align:right;"> 7,880 </td>
+   <td style="text-align:right;"> 10 </td>
+   <td style="text-align:right;"> 10,818 </td>
+   <td style="text-align:right;"> 149 </td>
+   <td style="text-align:right;"> 3.7% </td>
+   <td style="text-align:right;"> 9.1% </td>
   </tr>
 </tbody>
 </table>
 
 ## Reed Releases
 
-Reed releases was the first, with 0 total posts, it was also the shortest lived lasting exactly three months, from its first post to its signing off notifcation in February 2013. Reed Releases could also be considered the "purest" of the three incarnations as it did not have ample time to mature and fester. In the sentiment analysis below we will see that it was also the most positive of the pages, with the smallest share of trigger warnings and negative words [TODO: VALIDATE]. 
-
-![](doylehowl_files/figure-html/unnamed-chunk-5-1.png)<!-- -->
-
-## Reed Emissions
+Reed releases was the first, with 0 total posts, it was also the shortest lived lasting exactly three months, from its first post to its signing off notifcation in February 2013. Reed Releases could also be considered the "purest" of the three incarnations as it did not have ample time to mature and fester. In the sentiment analysis below we will see that it was also the most positive of the pages. Also, notably, Reed Releases didn't have any posts that were formally tagged with a trigger warning.
 
 ![](doylehowl_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
 
-## Reed Relieves
+Reed Releases, like the weekly Missed Connections, was focused more on the 1 on 1 interactions that students would have with each other in passing. Posts were often directed at named students, and were confessions of affection, appreciation, or love for one another. This positive appeal is perhaps what drew students to Reed Releases originally, it was a place to see the anamorous outpouring of the college's soul.
+
+> I can't think of anything else except the way you held me. You electrify me, from the bottom of my feet to the flower in my hair. C'mon, let's get our hearts thumping in time and space once again. What do we have to lose?
+
+The gensis of Reed Releases was also well timed. The page start posting on December 06, 2012. The day after the [last day of classes](https://www.reed.edu/registrar/pdfs/reed-academic-calendar-2012-2013.pdf) for the fall semseter in 2012. Although it was on the At Reed the last day of classes for the fall semester is normally on the Wednesday preceding finals week. This is so that the Thursday and Friday
 
 ![](doylehowl_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
+
+
+## Reed Emissions
+
+Reed Emissions was the second.
+
+![](doylehowl_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
+
+## Reed Relieves
+
+![](doylehowl_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
 
 ***
 
@@ -155,31 +189,31 @@ Reed Releases clearly comes across as more positive vs Reed Emissions and its co
 
 When broken down by time, certain trends begin to come through. Using the AFINN methodology the steady decline in sentiment per post in Reed Emissions leading up to Renn Fayre 2013 is seen clearly. A similar but less discernable decline is also seen in Reed Relieves.
 
-![](doylehowl_files/figure-html/unnamed-chunk-10-1.png)<!-- -->
+![](doylehowl_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
 
 This pattern would play nicely into Reed cultural narratives around Spring Crises, Junior Quals, and the stress of senior theses. We can start to verify this by observing the frequencey of posts with mentions of the stem or word 'thesis', 'midterm' and or 'qual'.
 
-![](doylehowl_files/figure-html/unnamed-chunk-11-1.png)<!-- -->
+![](doylehowl_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
 
 The trend is mostly how we would expect. The days leading up to and the week of Renn Fayre see the highest frequency of posts mentioning these stressful, then potentially joyous activities. This is particularly pronounced in the data for Reed Emissions, which sees a steady upward trend of frequencies, mimicing the same trend in declining sentiment.
 
 This, however, can be a sell fulfilling prophecy. Taking a purely exploratory approach we can tease apart the terms mentioned most frequently in those days with the lowest sentiment.
 
-![](doylehowl_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
+![](doylehowl_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
 
 And compare then the same with the high sentiment days
 
-![](doylehowl_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
+![](doylehowl_files/figure-html/unnamed-chunk-15-1.png)<!-- -->
 
 Then to truly visualize the difference, observe the words that are not shared across the two sets. 
 
 We can start on a positive note with the high sentiment days. 
 
-![](doylehowl_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
+![](doylehowl_files/figure-html/unnamed-chunk-16-1.png)<!-- -->
 
 Now contrast that with the words we see on the bottom 10 sentiment days that are *not* present in words seen in the top 10 sentiment days.
 
-![](doylehowl_files/figure-html/unnamed-chunk-15-1.png)<!-- -->
+![](doylehowl_files/figure-html/unnamed-chunk-17-1.png)<!-- -->
 
 The difference is striking - and incredibly revealing. It's the stuff of life that sets them apart, and most importantly, the stuff of life related to trauma. The fact that not a single post labeled with a trigger warning was located in the top 10 happiest days on these pages casts a new light on the content, and requires us to go deeper.
 
@@ -189,7 +223,7 @@ It's not theses, or midterms, or quals that appear to dictate the mood of the po
 
 ## The triggers
 
-![](doylehowl_files/figure-html/unnamed-chunk-16-1.png)<!-- -->
+![](doylehowl_files/figure-html/unnamed-chunk-18-1.png)<!-- -->
 
 
 ### The horrors we held
@@ -209,11 +243,27 @@ It's not theses, or midterms, or quals that appear to dictate the mood of the po
 
 My name is Andrew. 
 
-## The code
+## Basic statistics
 
-The code blocks below detail how the analysis above was performed
+### Day of week posts
 
-### Data preperation
+![](doylehowl_files/figure-html/unnamed-chunk-19-1.png)<!-- -->
+
+
+### Hour of day
+
+![](doylehowl_files/figure-html/unnamed-chunk-20-1.png)<!-- -->
+
+### Share of top 100 words
+
+![](doylehowl_files/figure-html/unnamed-chunk-21-1.png)<!-- -->
+
+
+### Words per post
+
+![](doylehowl_files/figure-html/unnamed-chunk-22-1.png)<!-- -->
+
+## Data preperation
 
 Extracted with `tumblr_utils.py`. This script downloaded the background JSONs for each blog post. The R script below extracts the necessary data from the JSONs and combines into a single table. This table is saved onto the local computer for future analysis and extraction.
 
@@ -231,9 +281,11 @@ strip_html <- function(s) {
 
 # list of files
 files <- c(
-   list.files("../tumblr-utils/reed-releases-jsons/json/"    , full.names = TRUE)
- , list.files("../tumblr-utils/reed-emissions-jsons/json/" , full.names = TRUE)
- , list.files("../tumblr-utils/reed-relieves-jsons/json/"   , full.names = TRUE)
+   list.files("../tumblr-utils/homers-smut.tumblr.com/json/", full.names = TRUE)
+ , list.files("../tumblr-utils/reed-emissions.tumblr.com/json/", full.names = TRUE)
+ , list.files("../tumblr-utils/reedrelieves.tumblr.com/json/", full.names = TRUE)
+ , list.files("../tumblr-utils/rerereves.tumblr.com/json/", full.names = TRUE)
+
 )
 length(files)
 
@@ -265,57 +317,11 @@ for (file in files) {
 
   data <- data %>% bind_rows(jsonTibble)
 }
-
-# Save data to local postgres db
-library(RPostgres)
-library(DBI)
-
-con <- dbConnect(RPostgres::Postgres())
-dbWriteTable(con, "doyle_howl_data", data, overwrite = TRUE)
-
-# check it there
-dbGetQuery(con, "SELECT COUNT(*) FROM doyle_howl_data;")
 ```
 
-### Basic statistics
+You can then perform the heroku upload
 
 
-```r
-title <- "Density of posts by day in week"
-  data %>%
-    group_by(page, wday) %>%
-    count() %>%
-  ggplot(aes(x = wday, y = n, fill = page)) +
-    geom_col(alpha = 0.5, color = rgb(0,0,0,0)) +
-    facet_wrap(~page) +
-    guides(fill = FALSE) +
-    ggtitle(title) +
-    theme_few(base_size = 14)
-```
-
-![](doylehowl_files/figure-html/unnamed-chunk-18-1.png)<!-- -->
-
-```r
-title <- "Density of posts by day in week"
-page_words %>%
-  group_by(page) %>%
-  mutate(norm_freq = freq / sum(freq)) %>%
-  top_n(100) %>%
-  ggplot(aes(x = norm_freq, fill = page)) + 
-  geom_density(alpha = 0.5) + 
-  scale_x_continuous(label = percent) +
-  ggtitle(title)
-```
-
-![](doylehowl_files/figure-html/unnamed-chunk-18-2.png)<!-- -->
-
-***
-
-# The frequentist approach
-
-## Posting patterns
-
-![](doylehowl_files/figure-html/unnamed-chunk-19-1.png)<!-- -->
 
 ## Common words
 
