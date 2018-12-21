@@ -47,21 +47,20 @@ library(knitr)
 library(RColorBrewer)
 library(ggrepel)
 
-# connect to pg
+# connect to pg on heroku
 connection <- read_file("connection.string")
 url <- httr::parse_url(connection)
-
-# con <- dbConnect(
-#    RPostgres::Postgres()
-#   ,dbname   = url$path
-#   ,host     = url$hostname
-#   ,port     = url$port
-#   ,user     = url$username
-#   ,password = url$password
-# )
+con <- dbConnect(
+   RPostgres::Postgres()
+  ,dbname   = url$path
+  ,host     = url$hostname
+  ,port     = url$port
+  ,user     = url$username
+  ,password = url$password
+)
 
 # local connection
-con <- dbConnect(RPostgres::Postgres())
+#con <- dbConnect(RPostgres::Postgres())
 
 # read in raw data
 raw_data <- dbReadTable(con, "doyle_howl_data")
