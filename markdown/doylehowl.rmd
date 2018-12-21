@@ -180,7 +180,7 @@ page_words <- posts_words %>%
   )
 ```
 
-An investigation into the murmurs, musings, and mentions from a memory long forgotten. 
+An investigation into the murmurs, musings, and mentions from a memory long forgotten. See the full sized blog [here](http://blakiseskream.github.io/doylehowl)
 
 ***
 
