@@ -4,6 +4,7 @@ author: "Andrew Watson"
 output:
   html_document:
     fig_caption: yes
+    theme: readable
     keep_md: yes
     toc: yes
     toc_depth: 2
@@ -188,7 +189,7 @@ An investigation into the murmurs, musings, and mentions from a memory long forg
 
 ## Gallon-guzzling technique
 
-It was Dec 6th, 2012 at exactly twenty-seven minutes past midnight that the first howl was heard. Fourteen days before the end of the world, a precursor to what would become confessional apocalypse began. Somewhere, someone, had collected a brief anonymous testimony and posted it on the popular blogging site tumblr.com. The text of this first spark of what would be a raging emotional inferno was simply,
+It was Dec 6th, 2012 at exactly twenty-seven minutes past midnight that the first howl was heard. Fourteen days before the end of the world, a precursor to what would become confessional apocalypse began. Somewhere, someone, had collected a brief anonymous testimony and posted it on the popular blogging site [tumblr.com](http://tumblr.com). The text of this first spark of what would be a raging emotional inferno was simply,
 
 > I know you are leaving Reed forever, but you will never leave my heart. DAT GALLON-GUZZLING TECHNIQUE
 
@@ -196,7 +197,7 @@ A forlorn exaltation into the cyber-sphere, a weary lover lamenting the invetibl
 
 > DAT GALLON-GUZZLING TECHNIQUE
 
-The first of thousands confessions to follow, all produced anonymously, all managed by a shadowy few secret keepers who would come and go over the proceeding months. In total three incarnations of the service would be wrought over a course of aproximately 18 months, from winter 2012 through the early autumn 2014. `r nrow(data)` posts would be made across the three Tumblr pages, which to this day still rest as a memorial to the emotional milieu of a point in time; and for many, a continuing source of Google-able nostalgia, and embarassment.
+The first of thousands confessions to follow, all produced anonymously, all managed by a shadowy few secret keepers who would come and go over the following months. In total three incarnations of the service would be wrought over a course of aproximately 18 months, from winter 2012 through the early autumn 2014. **`r comma(nrow(data))`** posts would be made across the three Tumblr pages, which to this day still rest as a memorial to the emotional milieu of a point in time; and for many, a continuing source of Google-able nostalgia and embarassment.
 
 ```{r}
 profane_words <- page_words %>%
@@ -218,7 +219,7 @@ wordcloud(
   
 <span style='font-size: small;'>*Most commonly used profanity words in posts. Sizes are scaled to log of frequency*</span>
 
-With this memorial though, we can over the distance of time look back at those thoughts, those memories, those incarnations, and begin to understand through the lens of data and analysis what themes, trends, and cultural shifts occured over those 18 months. Although what comes to follow is by no means exhaustive, it is a first pass at what may be a rich source of information at a raw point in time in the lives of students at the Reed College, in Portland, OR.
+With this memorial though, we can over the distance of time look back at those thoughts, those memories, those fantasies, and begin to understand through the lens of data and analysis what themes, trends, and cultural shifts occured over those 18 months. Although what comes to follow is by no means exhaustive, it is a first pass at what may be a rich source of information at a raw point in time in the lives of students at the Reed College, in Portland, OR.
 
 ## The right to forget
 
@@ -226,24 +227,6 @@ For the sake of privacy, all names have been removed from the quoted posts. Furt
 
 ***
 # A brief history of time
-
-```{r fig.height=4, fig.width=8}
-# PLOT: posts by month
-data %>%
-  group_by(month, page) %>%
-  count() %>%
-ggplot(aes(x = month, y = n, fill = page)) +
-  ggtitle("Posts by month") +
-  geom_col() +
-  xlab("Month") + 
-  ylab("Number of posts") + 
-  labs(fill = "Page") +
-  theme_few(base_size = 12) +
-  scale_x_date(date_labels = format("%b-%Y"), date_breaks = "3 months") +
-  scale_y_continuous(labels = comma) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  scale_fill_few()
-```
 
 ```{r include=FALSE}
 # Average days per week posts were made
@@ -265,9 +248,85 @@ total_number_of_words <- data %>%
   comma()
 ```
 
-College confession pages were nothing new or unique to Reed or the broader internet in winter 2012. Reed had, over the years, multiple forms of anonymous postings and public internet forums. The Reed College Missed Connections were a popular form of communicating anonymously into the ether. Sent out weekly to the entire student body, the Missed Connections usually had about 10 anonymous blurbs
+## In the beginning
 
-Although called different things, and run by different people, all three pages mantained a simple structure. Anonymous posts were submitted to the Tumblr pages via the questions feature. On average `r round(avg_days_per_week)` days out of the week the posts would be copied by administrators of the various pages (admins) and pasted onto the Tumblr and a Facebook page or group. A few early rules of conduct prevailed,
+College confession pages were nothing new or unique to Reed or the broader internet in winter 2012. Reed had over the years multiple forms of anonymous postings and public internet forums. The Reed College [Live Journal](https://reedlj.livejournal.com/2007/03/19/) (often shortend to just **reedlj**) was perhaps the most prolific and longest lasting of these internet forums. It was a retro interface that mimiced a simple internet forum style. Someone makes a post, others post comments as replies. The posts themselves would generate conversation that would be self contained within the thread. 
+
+Although not strickly anonymous or geared towards college confessions, reedlj still existed as the major incarnation of a *cyber-agoros* in the Reed community during the mid-2000's. The forum also was from a pre-Zuckerbergian age of the internet in which anonymous and fluid virtual identity was the norm. Posters and commentors therefore could remain anonymous by the very nature of contributing, blurring the lines between a strict anonymous "confession" type forum, and simply an early version of what we all understand as the Facebook newsfeed. Topics would range from [advice on where to park your car](https://reedlj.livejournal.com/906945.html) to [the pervasive loneliness of the Reed experience](https://reedlj.livejournal.com/222460.html), although by [2011](https://reedlj.livejournal.com/2011/12/10/) almost all the posts were strictly related to housing, rides, jobs, and other classifieds type material.
+
+Still the usage of reedlj spans over a lengthy 15 year period. During reedlj's height from 2004 to 2010 a core group of users contributed almost daily to the old school "Web 1.0" style forum. In total the reedlj boasted over **7,500** [posts](https://reedlj.livejournal.com/profile) and **57,000** [comments](https://reedlj.livejournal.com/profile) with contributions ongoing from the account's creation on April 6, 2001 to its [most recent post](https://reedlj.livejournal.com/2148878.html) on July 21st, 2016, titled pointedly,
+
+> Jul 21 2016, REEDLJ: If anyone is listening...
+
+As waves of late Millenials began to swarm the halls of Reed however the virtual conversation shifted to the core social networks of the 2010s in which anonymous identity was actively filtered out. By the start of Reed Releases in 2012 Facebook was the primary social feed through which students communicated with each other. Sometimes over college based groups, but mostly over the loose network of friend requests and re-posts that students would idley scroll through on their smudgey Macbook Pro screens. This is not to say there weren't other major outlets, Tumblr for example, which mantained some of the more chaotic structure of a Live Journal or the original MySpace, was common through parts of the student body, but it was through Facebook that information traveled fastest. 
+
+At the time of Reed Release's creation then the only major virtual outlet for anonymous confessionals was the Reed College [Missed Connections](http://www.reedthegrail.com/miss-lonely-hearts/okie-doker). Sent out weekly to the entire student body, the Missed Connections usually had about 10 anonymous blurbs. These blurbs took the style of the famous Craigslist [Missed Connections](https://portland.craigslist.org/search/mis) normally following a "You:", "Me:" pattern of narrative. 
+
+> Sep 30 2012, Missed Connection #67:
+> 
+> You: had your onion and jalapeño quesadilla swiped from right under your nose on Saturday night.
+>
+> Me: the swiper who swiped it and was consumed by guilt when it turned out it wasn't mine. I am so sorry!
+
+They were often small confessionals of love and admiration, or pleas of returning lost items. Moderated by the formal creation of the Student Body Info email (sent weekly by the president of the student body senate), and wedged in between a series of otherwise mundane event reminders and pleas for student participation, the Missed Connections were a small weekly treat to a student body that lusted for affection.
+
+> Dec 4 2011, Missed Connection #165:
+> 
+> You: My dance partner from the Dome who left on account of her friend. The rest of DJ Scola's set would have been enjoyable with you.
+> 
+> Me: Hoping for more than a wave goodbye. Maybe we could continue what we started over coffee?
+
+The Missed Connections also required some analog work on the part of the user. Although students could email the Missed Connections in directly to the person who ran it each semester (who's email would be included in the Student Body Info newsletter) more often than not students would submit them the "old fashioned" way: slip a piece of paper into a box in a cafe. This work on the part of the student (either submit virtually and risk detection, or submit anonymously but need to do it *in the real*) likely helped stem the flow of what would have otherwise been an deluge of confessionals. There were only a few hundred a semester emailed out, and the notifications only came once a week. Each week they were read intently by students everywhere, but the content was recieved in moderation.
+
+> Apr 24 2011, Missed Connection #131:
+>
+> I've thought about it long and hard
+>
+> your interests are right up my alley
+>
+> spending time with you hits the spot
+>
+> I'll splurge on anything for you-- just say the word and it's yours
+>
+> But... do you remember me? We once discussed a mutual dislike of picking feet. Need more help remembering?
+>
+> Shh, no.
+>
+> If you recently discussed the picking of feet with a sexy someone, say no more. It will all be okay. Meet me in the library lobby 4/27 at 8 pm. I'll be there. Then you'll remember?
+>
+> Until then, adieu.
+
+The Missed Connections, with their allure of (often times sexy) mystery were incredibly popular. It was through their format, coupled with the rising popularity of online confessionals at other colleges that Reed Releases first came to be.
+
+```{r fig.height=4, fig.width=8}
+# PLOT: posts by month
+data %>%
+  group_by(month, page) %>%
+  count() %>%
+ggplot(aes(x = month, y = n, fill = page)) +
+  ggtitle("Posts by month") +
+  geom_col() +
+  xlab("Month") + 
+  ylab("Number of posts") + 
+  labs(fill = "Page") +
+  theme_few(base_size = 12) +
+  scale_x_date(date_labels = format("%b-%Y"), date_breaks = "3 months") +
+  scale_y_continuous(labels = comma) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_few()
+```
+
+## Inspired by the good people of Columbia Admirers
+
+Reed Releases came online in December of 2012 with a simple disclaimer attached to it,
+
+> Inspired by the good people of Columbia Admirers, and in no way seeking to infringe on the Student Body Info's jursidiction, this blog seeks to give socially awkward Reedies an outlet for their frustrations, hopes, desires and bodily fluids. Or you could keep it real with expressions of genuine respect and affection.
+>
+> Releases published on Facebook - friend us to get the dirt!
+>
+> Anonymous and non-anonymous submissions welcome. Name people or don't.
+
+Over the next two years, although they would be run by different people, called different things, all three pages would remain true to this structure introduced by Reed Releases. Anonymous posts were submitted to the Tumblr pages via the questions feature. On average `r round(avg_days_per_week)` days out of the week the posts would be copied by administrators of the various pages (admins) and pasted onto the Tumblr and a Facebook page or group. A few early rules of conduct prevailed,
 
   - If a person was named in a post, the admins would message that person directly (usually on Facebook) and ask for their consent to post
   - Any posts showing troubling or triggering content were branded with a "TW:" tag
@@ -332,9 +391,9 @@ page_stats %>%
   kable_styling(bootstrap_options = c("striped", "hover"), full_width = F)
 ```
 
-## Reed Releases
+### Reed Releases
 
-Reed releases was the first, with `r nrow(filter(data, blog_name == 'Reed Releases'))` total posts, it was also the shortest lived lasting exactly three months, from its first post to its signing off notifcation in February 2013. Reed Releases could also be considered the "purest" of the three incarnations as it did not have ample time to mature and fester. In the sentiment analysis below we will see that it was also the most positive of the pages. Also, notably, Reed Releases didn't have any posts that were formally tagged with a trigger warning.
+Reed releases was the first, with **`r comma(nrow(filter(data, blog_name == 'Reed Releases')))`** total posts, it was also the shortest lived lasting exactly three months, from its first post to its signing off notifcation in February 2013. Reed Releases could also be considered the "purest" of the three incarnations as it did not have ample time to mature and fester. In the sentiment analysis below we will see that it was also the most positive of the pages. Also, notably, Reed Releases didn't have any posts that were formally tagged with a trigger warning.
 
 ```{r}
 releases_words <- page_words %>% filter(page == "Reed Releases")
@@ -379,7 +438,7 @@ ggplot(aes(x = day, y = n, fill = time_category)) +
 ```
 
 
-## Reed Emissions
+### Reed Emissions
 
 Reed Emissions was the second.
 
@@ -396,7 +455,7 @@ wordcloud(
 )
 ```
 
-## Reed Relieves
+### Reed Relieves
 
 ```{r echo=FALSE}
 relieves_words <- page_words %>% filter(page == "Reed Relieves")
