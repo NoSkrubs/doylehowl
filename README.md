@@ -1,21 +1,4 @@
----
-title: "Doyle Howl"
-author: "Andrew Watson"
-output:
-  html_document:
-    fig_caption: yes
-    keep_md: yes
-    toc: yes
-    toc_depth: 2
-    toc_float: yes
----
-
-
-
-
-
-
-An investigation into the murmurs, musings, and mentions from a memory long forgotten. 
+An investigation into the murmurs, musings, and mentions from a memory long forgotten. See the full sized blog [here](http://blakiseskream.github.io/doylehowl)
 
 ***
 
